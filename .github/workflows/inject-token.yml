@@ -1,0 +1,20 @@
+name: Inject Token
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inject token into admin page
+        run: |
+          TOKEN="${{ secrets.CSEL_TOKEN }}"
+          HEX=$(echo -n "$TOKEN" | xxd -p)
+          sed -i "s/__TOKEN_HEX__/$HEX/g" admin/index.html
+      - name: Commit and push
+        run: |
+          git config user.name "CSEL Bot"
+          git config user.email "bot@csel.dev"
+          git add admin/index.html
+          git commit -m "inject token from secret"
+          git push
