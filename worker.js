@@ -36,7 +36,7 @@ export default {
           (function() {
             var data = ${JSON.stringify(data)};
             if (data.access_token) {
-              window.opener.postMessage({ type: 'authorization', data: { token: data.access_token } }, '${SITE}');
+              window.opener.postMessage('authorization:' + JSON.stringify({ token: data.access_token }), '${SITE}');
             }
             window.close();
           })();
