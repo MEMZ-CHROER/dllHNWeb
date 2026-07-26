@@ -77,8 +77,9 @@ function gh(url, opts) {
     headers: { Authorization: 'Bearer ' + TOKEN, Accept: 'application/vnd.github.v3+json' }
   }, opts || {})).then(function(r) {
     if (r.status === 401) { TOKEN=null; localStorage.removeItem('csel_token'); render(); throw new Error('Token expired'); }
-    if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP ' + r.status + ': ' + t.slice(0,100)); });
-    return r.json();
+    return r.json().catch(function() {
+      return r.text().then(function(t) { throw new Error('HTTP ' + r.status + ': ' + t.substring(0,80)); });
+    });
   });
 }
 
