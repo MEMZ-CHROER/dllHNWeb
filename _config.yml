@@ -1,0 +1,13 @@
+title: DllHN · CSEL
+description: Hacknet 模组生态 - 从 Fork 到独立
+url: ""
+baseurl: ""
+markdown: kramdown
+permalink: /:title/
+include:
+  - admin
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: "default"
