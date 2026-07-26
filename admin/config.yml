@@ -5,8 +5,6 @@ backend:
   name: github
   repo: MEMZ-CHROER/dllHNWeb
   branch: master
-  base_url: https://hn.liuxiyu.cn
-  auth_endpoint: auth
 
 publish_mode: editorial_workflow
 media_folder: assets/img
