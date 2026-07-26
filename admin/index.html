@@ -4,6 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>CSEL 后台管理</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css" />
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#0a0a0f; color:#c8c8d0; font:15px/1.7 'Consolas',monospace; min-height:100vh; }
@@ -54,6 +55,23 @@ th { color:#666; font-weight:normal; font-size:13px; }
 .modal input, .modal textarea { width:100%; }
 .modal textarea { min-height:50vh; }
 .modal .btns { display:flex; gap:10px; margin-top:16px; }
+
+/* Rich Editor */
+.editor-wrap { display:flex; flex-direction:column; gap:0; }
+.editor-toolbar { display:flex; flex-wrap:wrap; gap:4px; padding:8px; background:#111; border:1px solid #2a2a3a; border-bottom:none; }
+.editor-toolbar button { background:#1a1a28; border:1px solid #2a2a3a; color:#c8c8d0; padding:4px 10px; font-size:13px; cursor:pointer; }
+.editor-toolbar button:hover { border-color:#00d4aa; }
+.editor-panes { display:flex; gap:0; border:1px solid #2a2a3a; }
+.editor-panes textarea, .editor-preview { width:50%; min-height:55vh; padding:12px; font:14px/1.6 'Consolas',monospace; }
+.editor-panes textarea { background:#0a0a0f; color:#c8c8d0; border:none; resize:none; }
+.editor-preview { background:#0e0e16; color:#c8c8d0; border-left:1px solid #2a2a3a; overflow-y:auto; }
+.editor-preview h1, .editor-preview h2 { color:#00d4aa; }
+.editor-preview a { color:#1e90ff; }
+.editor-preview code { background:#1a1a28; padding:2px 6px; border-radius:3px; }
+.editor-preview pre { background:#1a1a28; padding:12px; overflow-x:auto; }
+.editor-preview img { max-width:100%; }
+.editor-preview blockquote { border-left:3px solid #00d4aa; padding-left:12px; opacity:.8; }
+.katex { font-size:1.1em; }
 
 /* Warning */
 .warn { background:#1a1a28; border:1px solid #f39c12; padding:12px 16px; margin:12px 0; font-size:13px; }
@@ -221,18 +239,79 @@ function editFile(path) {
 function showModal(path, content) {
   var overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
-  overlay.innerHTML = `
-<div class="modal">
-  <h3>编辑: ${path}</h3>
-  <label>文件名</label><input type="text" id="mpath" value="${path}" />
-  <label>内容 (Markdown)</label><textarea id="mcontent">${escHtml(content||'')}</textarea>
-  <div class="btns">
-    <button class="btn" onclick="saveModal()">💾 保存</button>
-    <button class="btn btn-red" onclick="closeModal()">取消</button>
-  </div>
-</div>`;
+  // Build HTML with array to avoid template literal backtick issues
+  var h = [];
+  h.push('<div class="modal" style="width:90vw;max-width:960px;">');
+  h.push('<h3>编辑: ' + escHtml(path) + '</h3>');
+  h.push('<label style="margin-bottom:4px">文件名</label><input type="text" id="mpath" value="' + escHtml(path) + '" style="margin-bottom:8px" />');
+  h.push('<div class="editor-wrap"><div class="editor-toolbar">');
+  h.push('<button onclick="ins(\'**\',\'**\',\'粗体\')"><b>B</b></button>');
+  h.push('<button onclick="ins(\'*\',\'*\',\'斜体\')"><i>I</i></button>');
+  h.push('<button onclick="ins(\'## \',\'\',\'标题\')">H</button>');
+  h.push('<button onclick="ins(\'<br>---<br>\',\'\',\'分隔线\')">—</button>');
+  h.push('<button onclick="ins(\'[\',\'](url)\',\'链接\')">🔗</button>');
+  h.push('<button onclick="ins(\'![](\',\'?)\',\'图片\')">🖼</button>');
+  h.push('<button onclick="ins(\'<br><br>```<br>\',\'<br>```<br>\',\'代码\')">&lt;/&gt;</button>');
+  h.push('<button onclick="ins(\'<br>- \',\'\',\'列表\')">•</button>');
+  h.push('<button onclick="ins(\'<br>> \',\'\',\'引用\')">❝</button>');
+  h.push('<button onclick="ins(\'$$<br>\',\'<br>$$\',\'公式\')">∑</button>');
+  h.push('<button onclick="ins(\'$\',\'$\',\'行内公式\')">∫</button>');
+  h.push('</div><div class="editor-panes">');
+  h.push('<textarea id="mcontent" oninput="previewMd()">' + escHtml(content||'') + '</textarea>');
+  h.push('<div class="editor-preview" id="mdPreview"></div>');
+  h.push('</div></div>');
+  h.push('<div class="btns" style="margin-top:8px">');
+  h.push('<button class="btn" onclick="saveModal()">💾 保存</button>');
+  h.push('<button class="btn btn-red" onclick="closeModal()">取消</button></div></div>');
+  overlay.innerHTML = h.join('');
   document.body.appendChild(overlay);
   window._modalPath = path;
+  // Load KaTeX + marked then render preview
+  if (!window.marked) loadEditorLibs(function() { previewMd(); });
+  else setTimeout(previewMd, 100);
+}
+
+function ins(before, after, hint) {
+  var ta = document.getElementById('mcontent');
+  if (!ta) return;
+  var start = ta.selectionStart, end = ta.selectionEnd;
+  var sel = ta.value.substring(start, end) || hint;
+  before = before.replace(/<br>/g, '\n');
+  after = after.replace(/<br>/g, '\n');
+  ta.value = ta.value.substring(0, start) + before + sel + after + ta.value.substring(end);
+  ta.focus();
+  previewMd();
+}
+
+function loadEditorLibs(cb) {
+  var loaded = 0;
+  function check() { if (++loaded >= 2 && cb) cb(); }
+  var s1 = document.createElement('script');
+  s1.src = 'https://cdn.jsdelivr.net/npm/marked/marked.min.js';
+  s1.onload = check;
+  document.head.appendChild(s1);
+  var s2 = document.createElement('script');
+  s2.src = 'https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js';
+  s2.onload = check;
+  document.head.appendChild(s2);
+}
+
+function previewMd() {
+  var ta = document.getElementById('mcontent');
+  var preview = document.getElementById('mdPreview');
+  if (!ta || !preview) return;
+  if (!window.marked) { preview.innerHTML = '<p class="dim">加载渲染器...</p>'; return; }
+  var html = window.marked.parse(ta.value || '');
+  // Render LaTeX blocks
+  if (window.katex) {
+    html = html.replace(/\$\$([\s\S]*?)\$\$/g, function(_, m) {
+      try { return '<div style="text-align:center;padding:8px 0">' + katex.renderToString(m.trim(), {displayMode:true,throwOnError:false}) + '</div>'; } catch(e) { return '<div class="red">❌ ' + escHtml(m) + '</div>'; }
+    });
+    html = html.replace(/\$([^$\n]+?)\$/g, function(_, m) {
+      try { return katex.renderToString(m.trim(), {displayMode:false,throwOnError:false}); } catch(e) { return '$' + escHtml(m) + '$'; }
+    });
+  }
+  preview.innerHTML = html;
 }
 
 window.saveModal = function() {
@@ -347,20 +426,61 @@ window.delFile = function(path) {
 
 // ── New Page ──
 function loadNew() {
+  var defaultContent = '---\ntitle: 新页面\n---\n\n在这里写内容...';
   document.getElementById('main').innerHTML = `
 <div class="page-bar"><h2>➕ 新建页面</h2></div>
 <label style="display:block;margin:8px 0 4px;opacity:.7">文件名 (不含 .md)</label>
 <input type="text" id="npath" placeholder="my-page" />
-<label style="display:block;margin:12px 0 4px;opacity:.7">内容 (Markdown)</label>
-<textarea id="ncontent" style="width:100%;min-height:50vh;background:#111;border:1px solid #2a2a3a;color:#fff;padding:12px;font:14px/1.6 monospace;">---
-title: 新页面
----
-
-在这里写内容...
-</textarea>
+<div class="editor-wrap" style="margin-top:8px">
+  <div class="editor-toolbar">
+    <button onclick="insNew('**','**','粗体')"><b>B</b></button>
+    <button onclick="insNew('*','*','斜体')"><i>I</i></button>
+    <button onclick="insNew('## ','','标题')">H</button>
+    <button onclick="insNew('[','](url)','链接')">🔗</button>
+    <button onclick="insNew('![](','?)','图片')">🖼</button>
+    <button onclick="insNew('<br><br>```<br>','<br>```<br>','代码')">&lt;/&gt;</button>
+    <button onclick="insNew('<br>- ','','列表')">•</button>
+    <button onclick="insNew('<br>> ','','引用')">❝</button>
+    <button onclick="insNew('$$<br>','<br>$$','公式')">∑</button>
+    <button onclick="insNew('$','$','行内公式')">∫</button>
+  </div>
+  <div class="editor-panes">
+    <textarea id="ncontent" oninput="previewNew()">${escHtml(defaultContent)}</textarea>
+    <div class="editor-preview" id="newPreview"></div>
+  </div>
+</div>
 <div style="margin-top:12px">
   <button class="btn" onclick="createPage()">创建页面</button>
 </div>`;
+  loadEditorLibs(function() { previewNew(); });
+}
+
+function insNew(before, after, hint) {
+  var ta = document.getElementById('ncontent');
+  if (!ta) return;
+  var start = ta.selectionStart, end = ta.selectionEnd;
+  var sel = ta.value.substring(start, end) || hint;
+  before = before.replace(/<br>/g, '\n');
+  after = after.replace(/<br>/g, '\n');
+  ta.value = ta.value.substring(0, start) + before + sel + after + ta.value.substring(end);
+  ta.focus();
+  previewNew();
+}
+function previewNew() {
+  var ta = document.getElementById('ncontent');
+  var preview = document.getElementById('newPreview');
+  if (!ta || !preview) return;
+  if (!window.marked) { preview.innerHTML = '<p class="dim">加载渲染器...</p>'; return; }
+  var html = window.marked.parse(ta.value || '');
+  if (window.katex) {
+    html = html.replace(/\$\$([\s\S]*?)\$\$/g, function(_, m) {
+      try { return '<div style="text-align:center;padding:8px 0">' + katex.renderToString(m.trim(), {displayMode:true,throwOnError:false}) + '</div>'; } catch(e) { return '<div class="red">❌ ' + escHtml(m) + '</div>'; }
+    });
+    html = html.replace(/\$([^$\n]+?)\$/g, function(_, m) {
+      try { return katex.renderToString(m.trim(), {displayMode:false,throwOnError:false}); } catch(e) { return '$' + escHtml(m) + '$'; }
+    });
+  }
+  preview.innerHTML = html;
 }
 
 window.createPage = function() {
