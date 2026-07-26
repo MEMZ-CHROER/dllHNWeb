@@ -305,7 +305,7 @@ function previewMd() {
   var preview = document.getElementById('mdPreview');
   if (!ta || !preview) return;
   if (!window.marked) { preview.innerHTML = '<p class="dim">加载渲染器...</p>'; return; }
-  var html = window.marked.parse(ta.value || '');
+  var html = window.marked.parse(ta.value || '', { breaks: true });
   // Render LaTeX blocks
   if (window.katex) {
     html = html.replace(/\$\$([\s\S]*?)\$\$/g, function(_, m) {
@@ -449,7 +449,7 @@ function previewNew() {
   var preview = document.getElementById('newPreview');
   if (!ta || !preview) return;
   if (!window.marked) { preview.innerHTML = '<p class="dim">加载渲染器...</p>'; return; }
-  var html = window.marked.parse(ta.value || '');
+  var html = window.marked.parse(ta.value || '', { breaks: true });
   if (window.katex) {
     html = html.replace(/\$\$([\s\S]*?)\$\$/g, function(_, m) {
       try { return '<div style="text-align:center;padding:8px 0">' + katex.renderToString(m.trim(), {displayMode:true,throwOnError:false}) + '</div>'; } catch(e) { return '<div class="red">❌ ' + escHtml(m) + '</div>'; }
