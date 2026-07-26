@@ -371,9 +371,9 @@ function loadSettings() {
 }
 
 function getYaml(txt, key) {
-  var re = new RegExp('^' + key + '\\s*:\\s*["\\']?([^"\\'\\n]+)', 'm');
+  var re = new RegExp('^' + key + ':\\s*"?([^"\\n]+)', 'm');
   var m = txt.match(re);
-  return m ? m[1].trim() : '';
+  return m ? m[1].trim().replace(/["']$/,'') : '';
 }
 
 window.saveSettings = function() {
