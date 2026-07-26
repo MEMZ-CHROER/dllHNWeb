@@ -356,7 +356,7 @@ function loadNavbar() {
     if (content.length < 10) { main.innerHTML = '<p class="red">文件内容为空</p>'; return; }
     window._navHtml = content;
     // Parse existing nav items from <ul> in navbar
-    var navMatch = html.match(/<ul>([\s\S]*?)<\/ul>/i);
+    var navMatch = content.match(/<ul>([\s\S]*?)<\/ul>/i);
     var items = [];
     if (navMatch) {
       var re = /<li><a\s+href="([^"]+)"[^>]*>([^<]+)<\/a><\/li>/gi;
