@@ -1,5 +1,5 @@
 ---
-title:"Markdown教程"
+title: "Markdown教程"
 ---
 # 我是一级标题 
 用的`# xxx`
