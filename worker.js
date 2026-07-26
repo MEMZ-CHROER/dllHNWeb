@@ -30,37 +30,16 @@ export default {
       });
       const data = await r.json();
 
-      // 渲染页面：多路尝试把 token 送回 Decap CMS
+      // 纯 postMessage + 关闭弹窗
       return new Response(
-        `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>
-<script>
+        `<!DOCTYPE html><html><body><script>
 (function() {
-  var data = ${JSON.stringify(data)};
-  var token = data.access_token;
-  console.log('OAuth token:', token ? 'got it' : 'missing');
-
-  // 1) 标准 postMessage 对象格式
-  if (window.opener) {
-    window.opener.postMessage({ type: 'authorization', data: { token: token } }, '${SITE}');
+  var token = (${JSON.stringify(data)}).access_token;
+  if (token && window.opener) {
     window.opener.postMessage({ type: 'authorization', data: { token: token } }, '*');
-    // 2) 字符串前缀格式 (legacy)
-    window.opener.postMessage('authorization:' + JSON.stringify({ token: token }), '${SITE}');
-
-    // 3) code+state 格式
-    window.opener.postMessage({ code: data.access_token, state: '${SITE}' }, '${SITE}');
+    window.opener.postMessage('authorization:' + JSON.stringify({ token: token }), '*');
   }
-
-  // 4) localStorage 兜底
-  if (token) {
-    localStorage.setItem('github_token', token);
-  }
-
-  // 5) 重定向兜底
-  if (token) {
-    window.location.href = '${SITE}/admin/#access_token=' + token;
-  } else {
-    window.close();
-  }
+  window.close();
 })();
 <\/script></body></html>`,
         { headers: { "Content-Type": "text/html; charset=utf-8" } }
