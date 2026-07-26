@@ -163,8 +163,8 @@ function loadList() {
   document.getElementById('main').innerHTML = '<p>加载中...</p>';
   gh('/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1').then(function(data) {
     if (data.message) { document.getElementById('main').innerHTML = '<p class="red">' + data.message + '</p>'; return; }
-    var mds = data.tree.filter(function(f) { return f.path.endsWith('.md') && f.path.indexOf('node_modules')===-1 && f.path !== 'README.md'; });
-    mds.forEach(function(f) { shaMap[f.path] = f.sha; });
+    var mds = data.tree.filter(function(f) { return (f.path.endsWith('.md') || f.path.endsWith('.html')) && f.path.indexOf('node_modules')===-1 && f.path !== 'README.md'; });
+    data.tree.forEach(function(f) { shaMap[f.path] = f.sha; });
 
     var html = '<div class="page-bar"><h2>📄 页面管理</h2><button class="btn" onclick="go(\'new\')">+ 新建页面</button></div>';
     html += '<table><tr><th>文件</th><th>标题</th><th style="width:240px">操作</th></tr>';
@@ -344,20 +344,16 @@ window.createPage = function() {
 // ── Navbar Editor ──
 function loadNavbar() {
   var main = document.getElementById('main');
+  if (!main) { alert('main element missing'); return; }
   main.innerHTML = '<p>加载中...</p>';
-  try {
   gh('/repos/' + REPO + '/contents/_layouts/default.html?ref=' + BRANCH).then(function(meta) {
-    if (meta.message) { main.innerHTML = '<p class="red">' + meta.message + '</p>'; return; }
-    // Store SHA globally for save
+    if (!meta || meta.message) { main.innerHTML = '<p class="red">' + (meta ? meta.message : '空响应') + '</p>'; return; }
+    if (!meta.content) { main.innerHTML = '<p class="red">响应中没有文件内容</p>'; return; }
     window._navSha = meta.sha;
-    try {
-      var raw = meta.content.replace(/\n/g, '');
-      var content = atob(raw);
-      // Try UTF-8 decode, fall back to raw
-      try { content = decodeURIComponent(escape(content)); } catch(e) {}
-    } catch(e) {
-      main.innerHTML = '<p class="red">解码错误: ' + e.message + '</p>'; return;
-    }
+    var raw = meta.content.replace(/\n/g, '').replace(/\r/g, '');
+    var content = atob(raw);
+    try { content = decodeURIComponent(escape(content)); } catch(e) {}
+    if (content.length < 10) { main.innerHTML = '<p class="red">文件内容为空</p>'; return; }
     window._navHtml = content;
     // Parse existing nav items from <ul> in navbar
     var navMatch = html.match(/<ul>([\s\S]*?)<\/ul>/i);
@@ -380,11 +376,8 @@ function loadNavbar() {
     window._navItems = items;
     renderNavEditor();
   }).catch(function(e) {
-    main.innerHTML = '<p class="red">请求失败: ' + e.message + '</p>';
+    main.innerHTML = '<p class="red">请求失败: ' + (e.message||e) + '</p>';
   });
-  } catch(e) {
-    main.innerHTML = '<p class="red">错误: ' + e.message + '</p>';
-  }
 }
 
 function renderNavEditor() {
