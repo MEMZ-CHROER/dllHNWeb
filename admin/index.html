@@ -540,7 +540,15 @@ window.saveStyleGui = function() {
     sha: window._stySha,
     branch: BRANCH
   })}).then(function(d) {
-    if (d.content) { window._stySha = d.content.sha; window._rawCss = css; document.getElementById('styStatus').textContent = '✅ 已保存'; }
+    if (d.content) {
+      window._stySha = d.content.sha; window._rawCss = css;
+      document.getElementById('styStatus').textContent = '✅ 已保存，触发 Pages 重建...';
+      gh('/repos/' + REPO + '/pages/builds', { method: 'POST' }).then(function() {
+        document.getElementById('styStatus').textContent = '✅ 已保存，Pages 重建中（~30 秒）';
+      }).catch(function() {
+        document.getElementById('styStatus').textContent = '✅ 已保存（手动刷新 Pages）';
+      });
+    }
     else document.getElementById('styStatus').textContent = '❌ 保存失败: ' + (d.message||'');
   }).catch(function(e) {
     document.getElementById('styStatus').textContent = '❌ 保存失败: ' + e.message;
