@@ -115,6 +115,7 @@ function render() {
   html += '<a class="nav-item'+(state==='pages'?' active':'')+'" onclick="go(\'pages\')">📄 页面管理</a>';
   html += '<a class="nav-item'+(state==='navbar'?' active':'')+'" onclick="go(\'navbar\')">🔗 导航栏</a>';
   html += '<a class="nav-item'+(state==='new'?' active':'')+'" onclick="go(\'new\')">➕ 新建页面</a>';
+  html += '<a class="nav-item'+(state==='settings'?' active':'')+'" onclick="go(\'settings\')">⚙ 站点设置</a>';
   html += '<a class="nav-item" onclick="logout()" style="color:#666;margin-top:20px;">🚪 退出</a>';
   html += '</div>';
   html += '<div class="main" id="main"></div>';
@@ -148,6 +149,7 @@ function loadPage() {
   if (state === 'pages') loadList();
   else if (state === 'navbar') loadNavbar();
   else if (state === 'new') loadNew();
+  else if (state === 'settings') loadSettings();
 }
 
 function loadList() {
@@ -340,6 +342,59 @@ window.createPage = function() {
 };
 
 // ── Navbar Editor ──
+// ── 站点设置 ──
+function loadSettings() {
+  var main = document.getElementById('main');
+  main.innerHTML = '<p>加载中...</p>';
+  gh('/repos/' + REPO + '/contents/_config.yml?ref=' + BRANCH).then(function(meta) {
+    if (!meta || meta.message) { main.innerHTML = '<p class="red">' + (meta ? meta.message : '空响应') + '</p>'; return; }
+    window._cfgSha = meta.sha;
+    var raw = meta.content.replace(/\n/g, '').replace(/\r/g, '');
+    var txt = atob(raw);
+    try { txt = decodeURIComponent(escape(txt)); } catch(e) {}
+    // Parse simple YAML fields
+    var fields = { title: getYaml(txt,'title'), description: getYaml(txt,'description'), url: getYaml(txt,'url'), baseurl: getYaml(txt,'baseurl') };
+    main.innerHTML =
+      '<div class="page-bar"><h2>⚙ 站点设置</h2></div>' +
+      '<label style="display:block;margin:12px 0 4px;opacity:.7">网站标题</label>' +
+      '<input type="text" id="s_title" value="' + escHtml(fields.title) + '" style="width:100%" />' +
+      '<label style="display:block;margin:12px 0 4px;opacity:.7">描述</label>' +
+      '<input type="text" id="s_desc" value="' + escHtml(fields.description) + '" style="width:100%" />' +
+      '<label style="display:block;margin:12px 0 4px;opacity:.7">URL</label>' +
+      '<input type="text" id="s_url" value="' + escHtml(fields.url) + '" style="width:100%" />' +
+      '<label style="display:block;margin:12px 0 4px;opacity:.7">Base URL</label>' +
+      '<input type="text" id="s_base" value="' + escHtml(fields.baseurl) + '" style="width:100%" />' +
+      '<div style="margin-top:16px"><button class="btn" onclick="saveSettings()">💾 保存设置</button> <span id="cfgStatus" class="dim"></span></div>';
+  }).catch(function(e) {
+    main.innerHTML = '<p class="red">加载失败: ' + (e.message||e) + '</p>';
+  });
+}
+
+function getYaml(txt, key) {
+  var re = new RegExp('^' + key + '\\s*:\\s*["\\']?([^"\\'\\n]+)', 'm');
+  var m = txt.match(re);
+  return m ? m[1].trim() : '';
+}
+
+window.saveSettings = function() {
+  var sha = window._cfgSha;
+  var title = document.getElementById('s_title').value;
+  var desc = document.getElementById('s_desc').value;
+  var url = document.getElementById('s_url').value;
+  var base = document.getElementById('s_base').value;
+  var yml = 'title: ' + title + '\ndescription: ' + desc + '\nurl: "' + url + '"\nbaseurl: "' + base + '"\nmarkdown: kramdown\npermalink: /:title/\ninclude:\n  - admin\ndefaults:\n  - scope:\n      path: ""\n    values:\n      layout: "default"\n';
+  document.getElementById('cfgStatus').textContent = '保存中...';
+  gh('/repos/' + REPO + '/contents/_config.yml', { method: 'PUT', body: JSON.stringify({
+    message: 'update site settings',
+    content: b64enc(yml),
+    sha: sha,
+    branch: BRANCH
+  })}).then(function(d) {
+    if (d.content) { window._cfgSha = d.content.sha; document.getElementById('cfgStatus').textContent = '✅ 已保存'; }
+    else document.getElementById('cfgStatus').textContent = '❌ 保存失败: ' + (d.message||'');
+  });
+};
+
 function loadNavbar() {
   var main = document.getElementById('main');
   if (!main) { alert('main element missing'); return; }
