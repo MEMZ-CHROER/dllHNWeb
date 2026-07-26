@@ -172,6 +172,7 @@ function render() {
   html += '<a class="nav-item'+(state==='new'?' active':'')+'" onclick="go(\'new\')">➕ 新建页面</a>';
   html += '<a class="nav-item'+(state==='settings'?' active':'')+'" onclick="go(\'settings\')">⚙ 站点设置</a>';
   html += '<a class="nav-item'+(state==='style'?' active':'')+'" onclick="go(\'style\')">🎨 样式编辑器</a>';
+  html += '<a class="nav-item'+(state==='passwords'?' active':'')+'" onclick="go(\'passwords\')">🔐 页面密码</a>';
   html += '<a class="nav-item" onclick="logout()" style="color:#666;margin-top:20px;">🚪 退出</a>';
   html += '</div>';
   html += '<div class="main" id="main"></div>';
@@ -209,6 +210,7 @@ function loadPage() {
   else if (state === 'new') loadNew();
   else if (state === 'settings') loadSettings();
   else if (state === 'style') loadStyle();
+  else if (state === 'passwords') loadPasswords();
 }
 
 // ── Dashboard ──
@@ -308,6 +310,95 @@ window.delMedia = function(path) {
     message: 'delete ' + path, sha: shaMap[path], branch: BRANCH
   })}).then(function(d) {
     loadMedia();
+  });
+};
+
+// ── Page Passwords ──
+function loadPasswords() {
+  var main = document.getElementById('main');
+  main.innerHTML = '<p>加载中...</p>';
+  // Load both the password config and the page list
+  Promise.all([
+    gh('/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1'),
+    gh('/repos/' + REPO + '/contents/_passwords.json?ref=' + BRANCH).then(function(meta) {
+      window._pwSha = meta.sha;
+      var raw = meta.content.replace(/\n/g, '');
+      var txt = atob(raw);
+      try { txt = decodeURIComponent(escape(txt)); } catch(e) {}
+      return JSON.parse(txt);
+    }).catch(function() { return {}; })
+  ]).then(function(results) {
+    var tree = results[0];
+    if (tree.message) { main.innerHTML = '<p class="red">' + tree.message + '</p>'; return; }
+    var pwData = results[1] || {};
+    var pages = tree.tree.filter(function(f) { return f.path.endsWith('.md') && f.path !== 'README.md'; });
+    var html = '<div class="page-bar"><h2>🔐 页面密码</h2></div>';
+    html += '<p class="dim">为页面设置访问密码。密码留空 = 不加密。</p>';
+    html += '<table><tr><th>页面</th><th>密码</th><th>操作</th></tr>';
+    pages.forEach(function(f) {
+      var pagePath = '/' + f.path.replace('.md', '');
+      var hasPw = pwData[pagePath] ? pwData[pagePath] : '';
+      html += '<tr><td>' + f.path.replace('.md', '') + '</td>';
+      html += '<td><input type="text" id="pw_' + pagePath.replace(/\//g, '_') + '" value="' + escHtml(hasPw) + '" placeholder="留空 = 不加密" style="width:160px;font-size:13px;" /></td>';
+      html += '<td><button class="btn btn-sm" onclick="savePw(\'' + pagePath + '\')">保存</button></td></tr>';
+    });
+    html += '</table>';
+    html += '<div style="margin-top:12px"><button class="btn" onclick="saveAllPw()">💾 保存全部密码</button> <span id="pwStatus" class="dim"></span></div>';
+    main.innerHTML = html;
+  }).catch(function(e) {
+    main.innerHTML = '<p class="red">加载失败: ' + (e.message||e) + '</p>';
+  });
+}
+
+window.savePw = function(pagePath) {
+  var key = 'pw_' + pagePath.replace(/\//g, '_');
+  var val = document.getElementById(key).value.trim();
+  // Save single password by re-loading, modifying, saving
+  document.getElementById('pwStatus').textContent = '保存中...';
+  gh('/repos/' + REPO + '/contents/_passwords.json?ref=' + BRANCH).then(function(meta) {
+    var raw = meta.content.replace(/\n/g, '');
+    var txt = atob(raw);
+    try { txt = decodeURIComponent(escape(txt)); } catch(e) {}
+    var pwData = JSON.parse(txt);
+    if (val) pwData[pagePath] = val;
+    else delete pwData[pagePath];
+    var newContent = JSON.stringify(pwData, null, 2);
+    gh('/repos/' + REPO + '/contents/_passwords.json', { method: 'PUT', body: JSON.stringify({
+      message: 'update password for ' + pagePath,
+      content: b64enc(newContent),
+      sha: meta.sha,
+      branch: BRANCH
+    })}).then(function(d) {
+      if (d.content) { document.getElementById('pwStatus').textContent = '✅ 已保存（Pages 重建后生效）'; }
+      else document.getElementById('pwStatus').textContent = '❌ 保存失败';
+    });
+  });
+};
+
+window.saveAllPw = function() {
+  document.getElementById('pwStatus').textContent = '保存中...';
+  gh('/repos/' + REPO + '/contents/_passwords.json?ref=' + BRANCH).then(function(meta) {
+    var raw = meta.content.replace(/\n/g, '');
+    var txt = atob(raw);
+    try { txt = decodeURIComponent(escape(txt)); } catch(e) {}
+    var pwData = JSON.parse(txt);
+    // Read all input fields
+    var inputs = document.querySelectorAll('[id^="pw_"]');
+    var newData = {};
+    inputs.forEach(function(inp) {
+      var pagePath = '/' + inp.id.replace(/^pw_/, '').replace(/_/g, '/');
+      if (inp.value.trim()) newData[pagePath] = inp.value.trim();
+    });
+    var newContent = JSON.stringify(newData, null, 2);
+    gh('/repos/' + REPO + '/contents/_passwords.json', { method: 'PUT', body: JSON.stringify({
+      message: 'update all passwords',
+      content: b64enc(newContent),
+      sha: meta.sha,
+      branch: BRANCH
+    })}).then(function(d) {
+      if (d.content) { document.getElementById('pwStatus').textContent = '✅ 已保存，触发 Pages 重建...'; }
+      else document.getElementById('pwStatus').textContent = '❌ 保存失败';
+    });
   });
 };
 
