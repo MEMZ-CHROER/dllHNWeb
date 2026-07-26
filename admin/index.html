@@ -68,19 +68,17 @@ th { color:#666; font-weight:normal; font-size:13px; }
 const REPO = 'MEMZ-CHROER/dllHNWeb';
 const BRANCH = 'master';
 const SITE = '.';
-var TOKEN = null;
 var shaMap = {};
 
 // ── 密码 ──
 var _pwHex = '447265616447656d34323233393436';
+var _loggedIn = false;
 
 // ── GitHub API ──
 function gh(url, opts) {
-  var sep = url.indexOf('?') > -1 ? '&' : '?';
-  return fetch('https://api.github.com' + url + sep + '_t=' + Date.now(), Object.assign({
-    headers: { Authorization: 'Bearer ' + TOKEN, Accept: 'application/vnd.github.v3+json' }
+  return fetch('/api' + url, Object.assign({
+    headers: { Accept: 'application/vnd.github.v3+json' }
   }, opts || {})).then(function(r) {
-    if (r.status === 401) { TOKEN=null; localStorage.removeItem('csel_token'); render(); throw new Error('Token expired'); }
     return r.json().catch(function() {
       return r.text().then(function(t) { throw new Error('HTTP ' + r.status + ': ' + t.substring(0,80)); });
     });
@@ -88,9 +86,8 @@ function gh(url, opts) {
 }
 
 function ghRaw(url) {
-  var sep = url.indexOf('?') > -1 ? '&' : '?';
-  return fetch('https://api.github.com' + url + sep + '_t=' + Date.now(), {
-    headers: { Authorization: 'Bearer ' + TOKEN, Accept: 'application/vnd.github.v3.raw' }
+  return fetch('/raw' + url, {
+    headers: { Accept: 'application/vnd.github.v3.raw' }
   }).then(function(r) {
     if (!r.ok) throw new Error('HTTP ' + r.status + ' for ' + url);
     return r.text().then(function(t) {
@@ -110,7 +107,7 @@ function b64dec(s) { return decodeURIComponent(escape(atob(s))); }
 var state = 'pages';
 
 function render() {
-  if (!TOKEN) return renderLogin();
+  if (!_loggedIn) return renderLogin();
   var html = '';
   html += '<div class="app">';
   html += '<div class="sidebar">';
@@ -128,45 +125,23 @@ function render() {
 
 function go(s) { state=s; render(); }
 
-function logout() { TOKEN=null; localStorage.removeItem('csel_token'); render(); }
+function logout() { render(); }
 
 // ── Render Login ──
-function renderLogin() {
-  var saved = localStorage.getItem('csel_token');
-  if (saved) {
-    TOKEN = saved;
-    render();
-    return;
-  }
-  document.getElementById('app').innerHTML = `
-<div class="login-wrap">
-  <h1>[CSEL] 后台管理</h1>
-  <p class="dim">输入管理密码</p>
-  <input type="password" id="t" placeholder="密码" />
-  <button class="btn" onclick="login()">登录</button>
-</div>`;
-}
 function _hex(s) { var r='';for(var i=0;i<s.length;i+=2)r+=String.fromCharCode(parseInt(s.substr(i,2),16));return r; }
 window.login = function() {
   var v = document.getElementById('t').value;
   if (v === _hex(_pwHex)) {
-    TOKEN = localStorage.getItem('csel_token');
-    if (!TOKEN) {  // 首次：输完密码再输 token
-      document.getElementById('app').innerHTML = '<div class="login-wrap"><h1>[CSEL] 后台管理</h1><p class="green">✅ 密码正确</p><p class="dim">输入 GitHub Token（一次性的，存本地）</p><input type="text" id="tk" placeholder="github_pat_..." /><button class="btn" onclick="saveToken()">保存</button></div>';
-      return;
-    }
+    _loggedIn = true;
     render();
   } else {
     document.getElementById('app').innerHTML = '<div class="login-wrap"><h1>[CSEL] 后台管理</h1><p class="red">❌ 密码错误</p><input type="password" id="t" placeholder="密码" /><button class="btn" onclick="login()">登录</button></div>';
   }
 };
-window.saveToken = function() {
-  var v = document.getElementById('tk').value.trim();
-  if (!v) return;
-  localStorage.setItem('csel_token', v);
-  TOKEN = v;
-  render();
-};
+
+function renderLogin() {
+  document.getElementById('app').innerHTML = '<div class="login-wrap"><h1>[CSEL] 后台管理</h1><p class="dim">输入管理密码</p><input type="password" id="t" placeholder="密码" /><button class="btn" onclick="login()">登录</button></div>';
+}
 
 // ── Page List ──
 function loadPage() {

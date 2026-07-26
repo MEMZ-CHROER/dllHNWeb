@@ -3,4 +3,8 @@ name = "decap-oauth"
 main = "worker.js"
 workers_dev = true
 
-routes = ["hn.liuxiyu.cn/auth*"]
+routes = [
+  "hn.liuxiyu.cn/auth*",
+  "hn.liuxiyu.cn/api*",
+  "hn.liuxiyu.cn/raw*"
+]
