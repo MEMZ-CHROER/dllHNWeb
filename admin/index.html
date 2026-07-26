@@ -151,6 +151,7 @@ function render() {
   html += '<a class="nav-item'+(state==='navbar'?' active':'')+'" onclick="go(\'navbar\')">🔗 导航栏</a>';
   html += '<a class="nav-item'+(state==='new'?' active':'')+'" onclick="go(\'new\')">➕ 新建页面</a>';
   html += '<a class="nav-item'+(state==='settings'?' active':'')+'" onclick="go(\'settings\')">⚙ 站点设置</a>';
+  html += '<a class="nav-item'+(state==='style'?' active':'')+'" onclick="go(\'style\')">🎨 样式编辑器</a>';
   html += '<a class="nav-item" onclick="logout()" style="color:#666;margin-top:20px;">🚪 退出</a>';
   html += '</div>';
   html += '<div class="main" id="main"></div>';
@@ -185,6 +186,7 @@ function loadPage() {
   else if (state === 'navbar') loadNavbar();
   else if (state === 'new') loadNew();
   else if (state === 'settings') loadSettings();
+  else if (state === 'style') loadStyle();
 }
 
 function loadList() {
@@ -427,6 +429,41 @@ window.saveSettings = function() {
   })}).then(function(d) {
     if (d.content) { window._cfgSha = d.content.sha; document.getElementById('cfgStatus').textContent = '✅ 已保存'; }
     else document.getElementById('cfgStatus').textContent = '❌ 保存失败: ' + (d.message||'');
+  });
+};
+
+// ── 样式编辑器 ──
+function loadStyle() {
+  var main = document.getElementById('main');
+  main.innerHTML = '<p>加载中...</p>';
+  gh('/repos/' + REPO + '/contents/assets/css/style.css?ref=' + BRANCH).then(function(meta) {
+    if (!meta || meta.message) { main.innerHTML = '<p class="red">' + (meta ? meta.message : '空响应') + '</p>'; return; }
+    window._stySha = meta.sha;
+    var raw = meta.content.replace(/\n/g, '');
+    var txt = atob(raw);
+    try { txt = decodeURIComponent(escape(txt)); } catch(e) {}
+    main.innerHTML =
+      '<div class="page-bar"><h2>🎨 样式编辑器 (CSS)</h2></div>' +
+      '<div style="margin-bottom:12px"><button class="btn" onclick="saveStyle()">💾 保存样式</button> <span id="styStatus" class="dim"></span></div>' +
+      '<textarea id="styEditor" style="width:100%;min-height:65vh;font:13px/1.5 monospace;">' + escHtml(txt) + '</textarea>';
+  }).catch(function(e) {
+    main.innerHTML = '<p class="red">加载失败: ' + (e.message||e) + '</p>';
+  });
+}
+window.saveStyle = function() {
+  var content = document.getElementById('styEditor').value;
+  if (!content) return;
+  document.getElementById('styStatus').textContent = '保存中...';
+  gh('/repos/' + REPO + '/contents/assets/css/style.css', { method: 'PUT', body: JSON.stringify({
+    message: 'update style.css',
+    content: b64enc(content),
+    sha: window._stySha,
+    branch: BRANCH
+  })}).then(function(d) {
+    if (d.content) { window._stySha = d.content.sha; document.getElementById('styStatus').textContent = '✅ 已保存'; }
+    else document.getElementById('styStatus').textContent = '❌ 保存失败: ' + (d.message||'');
+  }).catch(function(e) {
+    document.getElementById('styStatus').textContent = '❌ 保存失败: ' + e.message;
   });
 };
 
