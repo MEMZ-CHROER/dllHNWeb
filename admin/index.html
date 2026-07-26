@@ -283,7 +283,14 @@ function doPublish(path) {
       gh('/repos/' + REPO + '/contents/' + htmlPath, { method: 'PUT', body: JSON.stringify(body2) }).then(function(d) {
         if (d.content) {
           shaMap[htmlPath] = d.content.sha;
-          main.innerHTML = '<p class="green">✅ 发布成功！<a href="/' + htmlPath + '" target="_blank">查看页面</a></p>';
+          main.innerHTML = '<p class="green">✅ 静态页已发布！<a href="/' + htmlPath + '" target="_blank">立即查看</a></p>';
+          // 同时触发 Pages 重建，让 Jekyll 版也跟上
+          main.innerHTML += '<p class="dim">⏫ 正在触发 Pages 重建...</p>';
+          gh('/repos/' + REPO + '/pages/builds', { method: 'POST' }).then(function(b) {
+            main.innerHTML += '<p class="green">✅ Pages 重建中（约 30 秒），刷新后可用 Jekyll 版本</p>';
+          }).catch(function(e) {
+            main.innerHTML += '<p class="dim">⚠ Pages 重建触发失败（不影响已发布的静态页）</p>';
+          });
         } else {
           main.innerHTML = '<p class="red">发布失败: ' + (d.message||'') + '</p>';
         }
