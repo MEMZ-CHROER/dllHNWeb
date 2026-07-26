@@ -3,6 +3,8 @@ description: Hacknet 模组生态 - 从 Fork 到独立
 url: ""
 baseurl: ""
 markdown: kramdown
+kramdown:
+  hard_wrap: true
 permalink: /:title/
 include:
   - admin
