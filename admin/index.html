@@ -73,7 +73,8 @@ var shaMap = {};
 
 // ── GitHub API ──
 function gh(url, opts) {
-  return fetch('https://api.github.com' + url, Object.assign({
+  var sep = url.indexOf('?') > -1 ? '&' : '?';
+  return fetch('https://api.github.com' + url + sep + '_t=' + Date.now(), Object.assign({
     headers: { Authorization: 'Bearer ' + TOKEN, Accept: 'application/vnd.github.v3+json' }
   }, opts || {})).then(function(r) {
     if (r.status === 401) { TOKEN=null; localStorage.removeItem('csel_token'); render(); throw new Error('Token expired'); }
@@ -84,11 +85,18 @@ function gh(url, opts) {
 }
 
 function ghRaw(url) {
-  return fetch('https://api.github.com' + url, {
+  var sep = url.indexOf('?') > -1 ? '&' : '?';
+  return fetch('https://api.github.com' + url + sep + '_t=' + Date.now(), {
     headers: { Authorization: 'Bearer ' + TOKEN, Accept: 'application/vnd.github.v3.raw' }
   }).then(function(r) {
     if (!r.ok) throw new Error('HTTP ' + r.status + ' for ' + url);
-    return r.text();
+    return r.text().then(function(t) {
+      // Check if API returned JSON instead of raw content
+      if (t.charAt(0) === '{' || t.charAt(0) === '[') {
+        try { var j = JSON.parse(t); if (j.name || j.message) throw new Error('API returned JSON: ' + (j.message || j.name)); } catch(e) { if (e.message.indexOf('API')>-1) throw e; }
+      }
+      return t;
+    });
   });
 }
 
@@ -240,6 +248,11 @@ function doPublish(path) {
   ghRaw('/repos/' + REPO + '/contents/' + path + '?ref=' + BRANCH).then(function(md) {
     // Get layout for wrapper
     ghRaw('/repos/' + REPO + '/contents/_layouts/default.html?ref=' + BRANCH).then(function(layout) {
+      // Debug: check first 50 chars
+      if (layout.charAt(0) === '{') {
+        main.innerHTML = '<p class="red">❌ API 返回了 JSON 而非文件内容。token 可能权限不足。</p>';
+        return;
+      }
       var htmlPath = path.replace('.md', '.html');
       var title = path.replace('.md','').split('/').pop();
 
