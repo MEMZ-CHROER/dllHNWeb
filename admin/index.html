@@ -264,11 +264,12 @@ window.createPage = function() {
 function loadNavbar() {
   var main = document.getElementById('main');
   main.innerHTML = '<p>加载中...</p>';
-  // Fetch SHA + content together
   gh('/repos/' + REPO + '/contents/_layouts/default.html?ref=' + BRANCH).then(function(meta) {
     if (meta.message) { main.innerHTML = '<p class="red">' + meta.message + '</p>'; return; }
-    shaMap['_layouts/default.html'] = meta.sha;
-    var content = decodeURIComponent(escape(atob(meta.content)));
+    // Store SHA globally for save
+    window._navSha = meta.sha;
+    var raw = meta.content.replace(/\n/g, '');
+    var content = decodeURIComponent(escape(atob(raw)));
     window._navHtml = content;
     // Parse existing nav items from <ul> in navbar
     var navMatch = html.match(/<ul>([\s\S]*?)<\/ul>/i);
@@ -354,11 +355,16 @@ window.saveNavbar = function() {
   html = html.replace(/<ul>[\s\S]*?<\/ul>/i, '<ul>\n' + listHtml + '  </ul>');
 
   document.getElementById('navStatus').textContent = '保存中...';
-  gh('/repos/' + REPO + '/contents/_layouts/default.html', { method: 'PUT', body: JSON.stringify({
-    message: 'update navbar', content: b64enc(html), sha: shaMap['_layouts/default.html'] || null, branch: BRANCH
-  })}).then(function(d) {
+  var body = {
+    message: 'update navbar',
+    content: b64enc(html),
+    branch: BRANCH
+  };
+  if (window._navSha) body.sha = window._navSha;
+
+  gh('/repos/' + REPO + '/contents/_layouts/default.html', { method: 'PUT', body: JSON.stringify(body) }).then(function(d) {
     if (d.content) {
-      shaMap['_layouts/default.html'] = d.content.sha;
+      window._navSha = d.content.sha;
       window._navHtml = html;
       document.getElementById('navStatus').textContent = '✅ 已保存';
     } else {
