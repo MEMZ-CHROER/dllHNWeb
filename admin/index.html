@@ -58,6 +58,32 @@ th { color:#666; font-weight:normal; font-size:13px; }
 /* Warning */
 .warn { background:#1a1a28; border:1px solid #f39c12; padding:12px 16px; margin:12px 0; font-size:13px; }
 .warn b { color:#f39c12; }
+
+/* ── Mobile Responsive ── */
+.hamburger { display:none; position:fixed; top:12px; left:12px; z-index:200; background:none; border:1px solid #2a2a3a; color:#00d4aa; font-size:22px; padding:4px 12px; cursor:pointer; }
+.sidebar-overlay { display:none; }
+@media (max-width:768px) {
+  body { font-size:14px; }
+  .hamburger { display:block; }
+  .app { display:block; position:relative; padding-top:50px; }
+  .sidebar { position:fixed; left:-240px; top:0; bottom:0; width:240px; z-index:150; transition:left .25s; }
+  .sidebar.open { left:0; }
+  .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:140; }
+  .sidebar-overlay.show { display:block; }
+  .main { padding:16px; }
+  .page-bar { flex-direction:column; align-items:stretch; gap:8px; }
+  .page-bar h2 { font-size:18px; }
+  table { display:block; overflow-x:auto; }
+  th, td { padding:8px; font-size:13px; white-space:nowrap; }
+  .btn { padding:10px 16px; min-height:44px; }
+  .btn-sm { padding:8px 12px; min-height:36px; }
+  input, textarea { font-size:16px !important; } /* 防 iOS 缩放 */
+  .modal { width:95vw; max-width:none; margin:10px; padding:16px; }
+  .modal textarea { min-height:40vh; }
+  .login-wrap { margin:80px auto; }
+  .login-wrap input { font-size:16px; min-height:44px; }
+  .login-wrap .btn { min-height:48px; }
+}
 </style>
 </head>
 <body>
@@ -106,9 +132,18 @@ function b64dec(s) { return decodeURIComponent(escape(atob(s))); }
 // ── Page States ──
 var state = 'pages';
 
+function toggleSidebar() {
+  var s = document.querySelector('.sidebar');
+  var o = document.querySelector('.sidebar-overlay');
+  if (s) s.classList.toggle('open');
+  if (o) o.classList.toggle('show');
+}
+
 function render() {
   if (!_loggedIn) return renderLogin();
   var html = '';
+  html += '<button class="hamburger" onclick="toggleSidebar()">☰</button>';
+  html += '<div class="sidebar-overlay" onclick="toggleSidebar()"></div>';
   html += '<div class="app">';
   html += '<div class="sidebar">';
   html += '<div class="logo">[CSEL] Admin</div>';
