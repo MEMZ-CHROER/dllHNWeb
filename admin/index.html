@@ -4,76 +4,153 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CSEL 后台管理</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
   <style>
-    body { margin:0; background:#0a0a0f; color:#c8c8d0; font:15px/1.7 monospace; }
-    .wrap { max-width:480px; margin:80px auto; padding:0 20px; }
-    h1 { color:#00d4aa; }
-    input, .btn { width:100%; padding:10px; box-sizing:border-box; }
-    input { background:#111; border:1px solid #2a2a3a; color:#fff; font:14px monospace; }
-    input:focus { border-color:#00d4aa; outline:none; }
-    .btn { display:block; padding:12px; background:#00d4aa; color:#0a0a0f; border:none; font:15px monospace; font-weight:bold; cursor:pointer; }
-    .btn:hover { opacity:.9; }
-    a { color:#1e90ff; }
-    .ok { color:#00d4aa; }
-    .hidden { display:none; }
+    .edit-wrap { max-width:900px; margin:0 auto; padding:20px; }
+    .edit-wrap h1 { color:#00d4aa; }
+    .edit-wrap select, .edit-wrap textarea, .edit-wrap .btn { width:100%; box-sizing:border-box; }
+    .edit-wrap select, .edit-wrap textarea { background:#111; border:1px solid #2a2a3a; color:#fff; }
+    .edit-wrap select { padding:8px; margin:10px 0; }
+    .edit-wrap textarea { padding:12px; font:14px/1.6 monospace; min-height:60vh; }
+    .edit-wrap .btn { padding:12px; background:#00d4aa; color:#0a0a0f; border:none; font:15px monospace; font-weight:bold; cursor:pointer; }
+    .edit-wrap .btn:hover { opacity:.9; }
+    .edit-wrap .row { display:flex; gap:10px; align-items:center; margin:10px 0; }
+    .edit-wrap .row .btn { width:auto; }
+    .edit-wrap .status { font-size:13px; opacity:.7; margin:6px 0; }
+    .edit-wrap a { color:#1e90ff; }
+    .login-wrap { max-width:420px; margin:100px auto; padding:0 20px; }
+    .login-wrap h1 { color:#00d4aa; }
+    .login-wrap input, .login-wrap .btn { width:100%; padding:10px; box-sizing:border-box; }
+    .login-wrap input { background:#111; border:1px solid #2a2a3a; color:#fff; font:14px monospace; margin:6px 0; }
+    .login-wrap input:focus { border-color:#00d4aa; outline:none; }
+    .login-wrap .btn { padding:12px; background:#00d4aa; color:#0a0a0f; border:none; font:15px monospace; font-weight:bold; cursor:pointer; margin:10px 0; }
+    .login-wrap .hint { font-size:13px; opacity:.6; }
   </style>
 </head>
 <body>
-  <div class="wrap" id="app"></div>
-  <script>
-  (function() {
-    var app = document.getElementById('app');
+<nav class="navbar"><div class="nav-inner">
+  <span class="logo">[CSEL]</span>
+  <ul><li><a href="../">网站首页</a></li></ul>
+</div></nav>
 
-    // 拦截 popup — 不让 CMS 开弹窗
-    var origOpen = window.open;
-    window.open = function() { return { close: function(){}, closed: true }; };
+<div id="app"></div>
 
-    // 注入 token：CMS 登录页面会监听 postMessage
-    function injectToken(token) {
-      localStorage.setItem('csel_token', token);
-      // 等 CMS 的 AuthenticationPage 挂载好，发消息
-      var tryCount = 0;
-      var timer = setInterval(function() {
-        tryCount++;
-        window.dispatchEvent(new MessageEvent('message', {
-          data: { type: 'authorization', data: { token: token } },
-          origin: window.location.origin
-        }));
-        if (tryCount > 30) clearInterval(timer);  // 最多试 30 次
-      }, 500);
-    }
+<script>
+const REPO = 'MEMZ-CHROER/dllHNWeb';
+const BRANCH = 'master';
 
-    var saved = localStorage.getItem('csel_token');
-    if (saved) {
-      app.innerHTML = '<p class="ok">✓ 检测到已保存的 Token</p>';
-      // 先加载 CMS，再注入
-      var s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/netlify-cms@2.10.180/dist/netlify-cms.js';
-      s.onload = function() {
-        setTimeout(function() { injectToken(saved); }, 1500);
-      };
-      document.body.appendChild(s);
-    } else {
-      app.innerHTML =
-        '<h1>[CSEL] 后台管理</h1>' +
-        '<p>输入 GitHub Personal Access Token：</p>' +
-        '<input type="text" id="t" placeholder="github_pat_..." />' +
-        '<button class="btn" onclick="doLogin()">登录</button>' +
-        '<p class="hint">去 <a href="https://github.com/settings/tokens/new?scopes=repo,user&description=CSEL-CMS" target="_blank">GitHub 生成 token</a>（勾选 repo + user）</p>';
+// ── 登录页面 ──
+function showLogin() {
+  app.innerHTML = `
+<div class="login-wrap">
+  <h1>[CSEL] 后台管理</h1>
+  <p>GitHub Personal Access Token</p>
+  <input type="text" id="t" placeholder="github_pat_..." />
+  <button class="btn" onclick="login()">登录</button>
+  <p class="hint">需要 repo + user 权限 · <a href="https://github.com/settings/tokens/new?scopes=repo,user&description=CSEL-CMS" target="_blank">生成 token</a></p>
+</div>`;
+}
 
-      window.doLogin = function() {
-        var v = document.getElementById('t').value.trim();
-        if (!v) return;
-        app.innerHTML = '<p class="ok">✓ Token 已保存，加载管理界面...</p>';
-        var s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/npm/netlify-cms@2.10.180/dist/netlify-cms.js';
-        s.onload = function() {
-          setTimeout(function() { injectToken(v); }, 1500);
-        };
-        document.body.appendChild(s);
-      };
-    }
-  })();
-  </script>
+// ── 编辑器 ──
+function showEditor(token) {
+  var shaMap = {};  // path → sha
+
+  app.innerHTML = `
+<div class="edit-wrap">
+  <h1>📝 编辑页面</h1>
+  <select id="fileList" onchange="loadFile()"></select>
+  <div class="row">
+    <button class="btn" onclick="saveFile()">💾 保存</button>
+    <span class="status" id="status"></span>
+  </div>
+  <textarea id="editor"></textarea>
+</div>`;
+
+  var sel = document.getElementById('fileList');
+
+  // 加载文件列表
+  fetch('https://api.github.com/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1', {
+    headers: { Authorization: 'Bearer ' + token }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.message) { setStatus('错误: ' + data.message); return; }
+    var files = data.tree.filter(function(f) { return f.path.endsWith('.md'); });
+    files.forEach(function(f) {
+      shaMap[f.path] = f.sha;
+      var opt = document.createElement('option');
+      opt.value = f.path;
+      opt.textContent = f.path;
+      sel.appendChild(opt);
+    });
+    if (files.length) { sel.value = files[0].path; loadFile(); }
+  })
+  .catch(function(e) { setStatus('错误: ' + e.message); });
+
+  window.loadFile = function() {
+    var path = sel.value;
+    if (!path) return;
+    setStatus('加载中...');
+    fetch('https://api.github.com/repos/' + REPO + '/contents/' + path + '?ref=' + BRANCH, {
+      headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github.v3.raw' }
+    })
+    .then(function(r) {
+      setStatus('已加载: ' + path);
+      return r.text();
+    })
+    .then(function(text) {
+      document.getElementById('editor').value = text;
+    })
+    .catch(function(e) { setStatus('加载失败: ' + e.message); });
+  };
+
+  window.saveFile = function() {
+    var path = sel.value;
+    var content = document.getElementById('editor').value;
+    if (!path || !content) return;
+    setStatus('保存中...');
+    var body = {
+      message: 'update ' + path,
+      content: btoa(unescape(encodeURIComponent(content))),
+      branch: BRANCH
+    };
+    if (shaMap[path]) body.sha = shaMap[path];
+
+    fetch('https://api.github.com/repos/' + REPO + '/contents/' + path, {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.content) { shaMap[path] = d.content.sha; setStatus('✅ 已保存: ' + path); }
+      else if (d.message) setStatus('❌ 保存失败: ' + d.message);
+      else setStatus('❌ 保存失败');
+    })
+    .catch(function(e) { setStatus('❌ 保存失败: ' + e.message); });
+  };
+}
+
+function setStatus(msg) {
+  var el = document.getElementById('status');
+  if (el) el.textContent = msg;
+}
+
+// ── 启动 ──
+var app = document.getElementById('app');
+var savedToken = localStorage.getItem('csel_token');
+if (savedToken) {
+  showEditor(savedToken);
+} else {
+  showLogin();
+}
+
+window.login = function() {
+  var v = document.getElementById('t').value.trim();
+  if (!v) return;
+  localStorage.setItem('csel_token', v);
+  showEditor(v);
+};
+</script>
 </body>
 </html>
