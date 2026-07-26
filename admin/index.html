@@ -5,10 +5,65 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CSEL 后台管理</title>
   <style>
-    body { margin: 0; background: #0a0a0f; }
+    body { margin:0; background:#0a0a0f; color:#c8c8d0; font:15px/1.7 monospace; }
+    .wrap { max-width:480px; margin:80px auto; padding:0 20px; }
+    h1 { color:#00d4aa; }
+    input, .btn { width:100%; padding:10px; box-sizing:border-box; }
+    input { background:#111; border:1px solid #2a2a3a; color:#fff; font:14px monospace; }
+    input:focus { border-color:#00d4aa; outline:none; }
+    .btn { display:block; padding:12px; background:#00d4aa; color:#0a0a0f; border:none; font:15px monospace; font-weight:bold; cursor:pointer; }
+    .btn:hover { opacity:.9; }
+    a { color:#1e90ff; }
+    .ok { color:#00d4aa; }
   </style>
 </head>
 <body>
-  <script src="https://cdn.jsdelivr.net/npm/netlify-cms@2.10.180/dist/netlify-cms.js"></script>
+  <div class="wrap" id="app"></div>
+  <script>
+  (function() {
+    var app = document.getElementById('app');
+
+    // 1) 从 URL 拿 token（OAuth 重定向回来时）
+    var p = new URLSearchParams(window.location.search);
+    var urlToken = p.get('token');
+    if (urlToken) {
+      localStorage.setItem('github_token', urlToken);
+      localStorage.setItem('netlify-cms-github-token', urlToken);
+      window.location.replace('/admin/');  // 去掉 token 参数重新加载
+      return;
+    }
+
+    // 2) 看看 localStorage 里有没有 token
+    var token = localStorage.getItem('github_token')
+             || localStorage.getItem('netlify-cms-github-token');
+
+    if (token) {
+      // 直接加载 CMS，它会从 localStorage 读到 token
+      app.innerHTML = '<p class="ok">Token 已就绪，加载管理界面...</p>';
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/netlify-cms@2.10.180/dist/netlify-cms.js';
+      document.body.appendChild(s);
+    } else {
+      // 显示手动登录
+      app.innerHTML =
+        '<h1>[CSEL] 后台管理</h1>' +
+        '<p>输入 GitHub Personal Access Token：</p>' +
+        '<input type="text" id="t" placeholder="github_pat_..." />' +
+        '<button class="btn" onclick="doLogin()">登录</button>' +
+        '<p>去 <a href="https://github.com/settings/tokens/new?scopes=repo,user&description=CSEL-CMS" target="_blank">GitHub 生成 token</a>（勾选 repo + user）</p>';
+
+      window.doLogin = function() {
+        var v = document.getElementById('t').value.trim();
+        if (!v) return;
+        localStorage.setItem('github_token', v);
+        localStorage.setItem('netlify-cms-github-token', v);
+        app.innerHTML = '<p class="ok">✓ Token 已保存，加载中...</p>';
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/netlify-cms@2.10.180/dist/netlify-cms.js';
+        document.body.appendChild(s);
+      };
+    }
+  })();
+  </script>
 </body>
 </html>
