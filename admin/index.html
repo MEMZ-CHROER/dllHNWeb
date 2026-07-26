@@ -71,12 +71,8 @@ const SITE = '.';
 var TOKEN = null;
 var shaMap = {};
 
-// ── 内置令牌 (base64 编码) ──
-var _creds = {
-  // hex 编码绕过 GitHub secret scanning
-  t: '6768705f7364737659595154636a506d5845576c595234634b66636f537344776e4634457a564865',
-  p: '447265616447656d34323233393436'
-};
+// ── 密码 ──
+var _pwHex = '447265616447656d34323233393436';
 
 // ── GitHub API ──
 function gh(url, opts) {
@@ -153,20 +149,23 @@ function renderLogin() {
 function _hex(s) { var r='';for(var i=0;i<s.length;i+=2)r+=String.fromCharCode(parseInt(s.substr(i,2),16));return r; }
 window.login = function() {
   var v = document.getElementById('t').value;
-  var pw = _hex(_creds.p);
-  if (v === pw) {
-    TOKEN = _hex(_creds.t);
-    localStorage.setItem('csel_token', TOKEN);
+  if (v === _hex(_pwHex)) {
+    TOKEN = localStorage.getItem('csel_token');
+    if (!TOKEN) {  // 首次：输完密码再输 token
+      document.getElementById('app').innerHTML = '<div class="login-wrap"><h1>[CSEL] 后台管理</h1><p class="green">✅ 密码正确</p><p class="dim">输入 GitHub Token（一次性的，存本地）</p><input type="text" id="tk" placeholder="github_pat_..." /><button class="btn" onclick="saveToken()">保存</button></div>';
+      return;
+    }
     render();
   } else {
-    document.getElementById('app').innerHTML = `
-<div class="login-wrap">
-  <h1>[CSEL] 后台管理</h1>
-  <p class="red">❌ 密码错误</p>
-  <input type="password" id="t" placeholder="密码" />
-  <button class="btn" onclick="login()">登录</button>
-</div>`;
+    document.getElementById('app').innerHTML = '<div class="login-wrap"><h1>[CSEL] 后台管理</h1><p class="red">❌ 密码错误</p><input type="password" id="t" placeholder="密码" /><button class="btn" onclick="login()">登录</button></div>';
   }
+};
+window.saveToken = function() {
+  var v = document.getElementById('tk').value.trim();
+  if (!v) return;
+  localStorage.setItem('csel_token', v);
+  TOKEN = v;
+  render();
 };
 
 // ── Page List ──
