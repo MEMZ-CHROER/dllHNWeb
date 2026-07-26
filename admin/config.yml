@@ -3,11 +3,9 @@
 
 backend:
   name: github
-  repo: 你的用户名/你的仓库名     # 例如: CSEL-Team/DllHN
-  branch: main
-  base_url: https://你的域名       # 例如: https://csel.example.com
-  # 如果不用自定义域名，用 GitHub Pages 地址：
-  # base_url: https://你的用户名.github.io/仓库名
+  repo: MEMZ-CHROER/dllHNWeb
+  branch: master
+  base_url: https://hn.liuxiyu.cn
 
 publish_mode: editorial_workflow
 media_folder: assets/img
