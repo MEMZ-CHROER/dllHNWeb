@@ -1,0 +1,6 @@
+compatibility_date = "2026-07-26"
+name = "decap-oauth"
+main = "worker.js"
+workers_dev = true
+
+routes = ["hn.liuxiyu.cn/auth*"]
