@@ -264,30 +264,102 @@ window.createPage = function() {
 function loadNavbar() {
   var main = document.getElementById('main');
   main.innerHTML = '<p>加载中...</p>';
-  ghRaw('/repos/' + REPO + '/contents/_layouts/default.html?ref=' + BRANCH).then(function(content) {
-    main.innerHTML = `
-<div class="page-bar"><h2>🔗 导航栏</h2></div>
-<div class="warn"><b>⚠ 编辑 _layouts/default.html</b> — 修改导航链接</div>
-<label style="display:block;margin:8px 0 4px;opacity:.7">文件名</label>
-<input type="text" id="npath" value="_layouts/default.html" style="width:100%" />
-<label style="display:block;margin:12px 0 4px;opacity:.7">内容</label>
-<textarea id="ncontent" style="width:100%;min-height:50vh;font:13px/1.5 monospace;">${escHtml(content)}</textarea>
-<div style="margin-top:12px">
-  <button class="btn" onclick="saveNavbar()">💾 保存导航栏</button>
-</div>`;
+  ghRaw('/repos/' + REPO + '/contents/_layouts/default.html?ref=' + BRANCH).then(function(html) {
+    window._navHtml = html;
+    // Parse existing nav items from <ul> in navbar
+    var navMatch = html.match(/<ul>([\s\S]*?)<\/ul>/i);
+    var items = [];
+    if (navMatch) {
+      var re = /<li><a\s+href="([^"]+)"[^>]*>([^<]+)<\/a><\/li>/gi;
+      var m;
+      while ((m = re.exec(navMatch[1])) !== null) {
+        items.push({ href: m[1], label: m[2] });
+      }
+    }
+    if (items.length === 0) {
+      items = [
+        { href: '{{ site.baseurl }}/', label: '首页' },
+        { href: '{{ site.baseurl }}/dllhn', label: 'DllHN' },
+        { href: '{{ site.baseurl }}/csel-standalone', label: 'CSEL 独立版' },
+        { href: '{{ site.baseurl }}/csel-mod', label: 'CSEL Mod' }
+      ];
+    }
+    window._navItems = items;
+    renderNavEditor();
   });
 }
 
+function renderNavEditor() {
+  var main = document.getElementById('main');
+  var items = window._navItems || [];
+  var listHtml = '';
+  items.forEach(function(item, i) {
+    listHtml += '<tr>';
+    listHtml += '<td style="cursor:move;font-size:18px;opacity:.4" onclick="moveNavItem(' + i + ',-1)">↑</td>';
+    listHtml += '<td style="cursor:move;font-size:18px;opacity:.4" onclick="moveNavItem(' + i + ',1)">↓</td>';
+    listHtml += '<td><input type="text" id="nlabel' + i + '" value="' + escHtml(item.label) + '" style="width:100%" /></td>';
+    listHtml += '<td><input type="text" id="nhref' + i + '" value="' + escHtml(item.href) + '" style="width:100%;font-size:12px;" /></td>';
+    listHtml += '<td><button class="btn btn-sm btn-red" onclick="delNavItem(' + i + ')">✕</button></td>';
+    listHtml += '</tr>';
+  });
+
+  main.innerHTML = `
+<div class="page-bar"><h2>🔗 导航栏</h2></div>
+<div class="warn"><b>💡</b> 添加、删除、排序导航链接。点 ↑↓ 调整顺序。</div>
+<table>
+<tr><th style="width:30px"></th><th style="width:30px"></th><th>名称</th><th>链接</th><th style="width:50px"></th></tr>
+${listHtml}
+</table>
+<div style="margin:12px 0"><button class="btn btn-sm" onclick="addNavItem()">+ 添加链接</button></div>
+<div style="margin-top:16px"><button class="btn" onclick="saveNavbar()">💾 保存导航栏</button> <span id="navStatus" class="dim"></span></div>`;
+}
+
+window.addNavItem = function() {
+  if (!window._navItems) window._navItems = [];
+  window._navItems.push({ href: '{{ site.baseurl }}/new-page', label: '新页面' });
+  renderNavEditor();
+};
+
+window.delNavItem = function(i) {
+  window._navItems.splice(i, 1);
+  renderNavEditor();
+};
+
+window.moveNavItem = function(i, dir) {
+  var items = window._navItems;
+  var j = i + dir;
+  if (j < 0 || j >= items.length) return;
+  var tmp = items[i];
+  items[i] = items[j];
+  items[j] = tmp;
+  renderNavEditor();
+};
+
 window.saveNavbar = function() {
-  var path = document.getElementById('npath').value.trim();
-  var content = document.getElementById('ncontent').value;
-  if (!content) return;
-  document.getElementById('main').innerHTML = '<p>保存中...</p>';
-  gh('/repos/' + REPO + '/contents/' + path, { method: 'PUT', body: JSON.stringify({
-    message: 'update navbar', content: b64enc(content), sha: shaMap[path] || null, branch: BRANCH
+  var items = window._navItems || [];
+  var listHtml = '';
+  items.forEach(function(item) {
+    var label = document.getElementById('nlabel' + items.indexOf(item));
+    var href = document.getElementById('nhref' + items.indexOf(item));
+    listHtml += '    <li><a href="' + (href ? href.value : item.href) + '">' + (label ? label.value : item.label) + '</a></li>\n';
+  });
+  listHtml = listHtml.replace(/\{\{site\.baseurl\}\}/g, '{{ site.baseurl }}');
+
+  // Replace the nav <ul> in the template
+  var html = window._navHtml;
+  html = html.replace(/<ul>[\s\S]*?<\/ul>/i, '<ul>\n' + listHtml + '  </ul>');
+
+  document.getElementById('navStatus').textContent = '保存中...';
+  gh('/repos/' + REPO + '/contents/_layouts/default.html', { method: 'PUT', body: JSON.stringify({
+    message: 'update navbar', content: b64enc(html), sha: shaMap['_layouts/default.html'] || null, branch: BRANCH
   })}).then(function(d) {
-    if (d.content) { shaMap[path]=d.content.sha; document.getElementById('main').innerHTML='<p class="green">✅ 导航栏已保存</p>'; }
-    else document.getElementById('main').innerHTML='<p class="red">保存失败: '+(d.message||'unknown')+'</p>';
+    if (d.content) {
+      shaMap['_layouts/default.html'] = d.content.sha;
+      window._navHtml = html;
+      document.getElementById('navStatus').textContent = '✅ 已保存';
+    } else {
+      document.getElementById('navStatus').textContent = '❌ 保存失败: ' + (d.message||'');
+    }
   });
 };
 
