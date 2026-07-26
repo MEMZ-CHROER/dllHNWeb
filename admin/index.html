@@ -154,15 +154,16 @@ function loadList() {
     mds.forEach(function(f) { shaMap[f.path] = f.sha; });
 
     var html = '<div class="page-bar"><h2>📄 页面管理</h2><button class="btn" onclick="go(\'new\')">+ 新建页面</button></div>';
-    html += '<table><tr><th>文件</th><th>标题</th><th style="width:140px">操作</th></tr>';
+    html += '<table><tr><th>文件</th><th>标题</th><th style="width:240px">操作</th></tr>';
     mds.forEach(function(f) {
       var title = f.path.replace('.md','').replace(/^content\/pages\//,'').replace(/\//g,' / ');
       html += '<tr><td><a href="' + SITE + '/' + f.path.replace('.md','') + '" target="_blank">' + f.path + '</a></td>';
       html += '<td class="dim">' + title + '</td>';
       html += '<td><button class="btn btn-sm" onclick="editFile(\'' + f.path + '\')">编辑</button> ';
+      html += '<button class="btn btn-sm btn-amber" onclick="quickPublish(\'' + f.path + '\')">⚡发布</button> ';
       html += '<button class="btn btn-sm btn-red" onclick="delFile(\'' + f.path + '\')">删除</button></td></tr>';
     });
-    html += '</table>';
+    html += '</table><p class="dim" style="margin-top:8px">⚡发布 = 直接提交 HTML 版本，立刻生效（不等 Pages 构建）</p>';
     document.getElementById('main').innerHTML = html;
   });
 }
@@ -212,6 +213,66 @@ window.closeModal = function() {
   var el = document.querySelector('.modal-overlay');
   if (el) el.remove();
 };
+
+// ── Quick Publish (render HTML immediately) ──
+window.quickPublish = function(path) {
+  var main = document.getElementById('main');
+  main.innerHTML = '<p>⚡ 渲染并发布 ' + path + '...</p>';
+
+  // Load marked if not yet loaded
+  if (!window.marked) {
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/marked/marked.min.js';
+    s.onload = function() { doPublish(path); };
+    document.body.appendChild(s);
+  } else {
+    doPublish(path);
+  }
+};
+
+function doPublish(path) {
+  var main = document.getElementById('main');
+  ghRaw('/repos/' + REPO + '/contents/' + path + '?ref=' + BRANCH).then(function(md) {
+    // Get layout for wrapper
+    ghRaw('/repos/' + REPO + '/contents/_layouts/default.html?ref=' + BRANCH).then(function(layout) {
+      var htmlPath = path.replace('.md', '.html');
+      var title = path.replace('.md','').split('/').pop();
+
+      // Extract YAML frontmatter title
+      var titleMatch = md.match(/^---[\s\S]*?title:\s*(.+)[\s\S]*?---/);
+      if (titleMatch) title = titleMatch[1].trim();
+
+      // Strip frontmatter, render markdown
+      var body = md.replace(/^---[\s\S]*?---\s*/, '');
+      var rendered = marked.parse(body);
+
+      // Build complete HTML using layout as template
+      var pageHtml = layout
+        .replace(/{{ content }}/g, rendered)
+        .replace(/{{ page\.title }}/g, title)
+        .replace(/{{ site\.title }}/g, 'DllHN · CSEL')
+        .replace(/{{ site\.baseurl }}/g, '')
+        .replace(/{{ page\.url }}/g, '/' + htmlPath);
+
+      // Get SHA if html file already exists
+      var sha = null;
+      if (shaMap[htmlPath]) sha = shaMap[htmlPath];
+
+      var body2 = { message: 'quick publish ' + htmlPath, content: b64enc(pageHtml), branch: BRANCH };
+      if (sha) body2.sha = sha;
+
+      main.innerHTML = '<p>⏫ 提交 HTML 到 GitHub...</p>';
+      gh('/repos/' + REPO + '/contents/' + htmlPath, { method: 'PUT', body: JSON.stringify(body2) }).then(function(d) {
+        if (d.content) {
+          shaMap[htmlPath] = d.content.sha;
+          main.innerHTML = '<p class="green">✅ 发布成功！<a href="/' + htmlPath + '" target="_blank">查看页面</a></p>';
+        } else {
+          main.innerHTML = '<p class="red">发布失败: ' + (d.message||'') + '</p>';
+        }
+      });
+    });
+  });
+}
 
 window.delFile = function(path) {
   if (!confirm('确定删除 ' + path + ' ？')) return;
