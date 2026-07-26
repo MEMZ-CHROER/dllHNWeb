@@ -148,7 +148,7 @@ function b64enc(s) { return btoa(unescape(encodeURIComponent(s))); }
 function b64dec(s) { return decodeURIComponent(escape(atob(s))); }
 
 // ── Page States ──
-var state = 'pages';
+var state = 'dashboard';
 
 function toggleSidebar() {
   var s = document.querySelector('.sidebar');
@@ -165,7 +165,9 @@ function render() {
   html += '<div class="app">';
   html += '<div class="sidebar">';
   html += '<div class="logo">[CSEL] Admin</div>';
+  html += '<a class="nav-item'+(state==='dashboard'?' active':'')+'" onclick="go(\'dashboard\')">🏠 仪表盘</a>';
   html += '<a class="nav-item'+(state==='pages'?' active':'')+'" onclick="go(\'pages\')">📄 页面管理</a>';
+  html += '<a class="nav-item'+(state==='media'?' active':'')+'" onclick="go(\'media\')">🖼 媒体库</a>';
   html += '<a class="nav-item'+(state==='navbar'?' active':'')+'" onclick="go(\'navbar\')">🔗 导航栏</a>';
   html += '<a class="nav-item'+(state==='new'?' active':'')+'" onclick="go(\'new\')">➕ 新建页面</a>';
   html += '<a class="nav-item'+(state==='settings'?' active':'')+'" onclick="go(\'settings\')">⚙ 站点设置</a>';
@@ -200,12 +202,114 @@ function renderLogin() {
 
 // ── Page List ──
 function loadPage() {
-  if (state === 'pages') loadList();
+  if (state === 'dashboard') loadDashboard();
+  else if (state === 'pages') loadList();
+  else if (state === 'media') loadMedia();
   else if (state === 'navbar') loadNavbar();
   else if (state === 'new') loadNew();
   else if (state === 'settings') loadSettings();
   else if (state === 'style') loadStyle();
 }
+
+// ── Dashboard ──
+function loadDashboard() {
+  var main = document.getElementById('main');
+  main.innerHTML = '<p>加载中...</p>';
+  gh('/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1').then(function(data) {
+    if (data.message) { main.innerHTML = '<p class="red">' + data.message + '</p>'; return; }
+    var mds = data.tree.filter(function(f) { return f.path.endsWith('.md') && f.path !== 'README.md'; });
+    var imgs = data.tree.filter(function(f) { return f.path.startsWith('assets/img/'); });
+    var recent = data.tree.slice(-10).reverse();
+    var html = '<div class="page-bar"><h2>🏠 仪表盘</h2></div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px;">';
+    html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;text-align:center"><div style="font-size:32px;color:#00d4aa;font-weight:bold">' + mds.length + '</div><div class="dim">页面</div></div>';
+    html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;text-align:center"><div style="font-size:32px;color:#00d4aa;font-weight:bold">' + imgs.length + '</div><div class="dim">图片</div></div>';
+    html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;text-align:center"><div style="font-size:32px;color:#00d4aa;font-weight:bold">' + data.tree.length + '</div><div class="dim">文件</div></div>';
+    html += '</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px;">';
+    html += '<button class="btn" onclick="go(\'new\')">➕ 新建页面</button>';
+    html += '<button class="btn" onclick="go(\'media\')">🖼 上传图片</button>';
+    html += '<button class="btn" onclick="go(\'navbar\')">🔗 编辑导航</button>';
+    html += '<button class="btn" onclick="go(\'style\')">🎨 编辑样式</button>';
+    html += '</div>';
+    html += '<b>最近更新</b><table><tr><th>文件</th><th>大小</th></tr>';
+    recent.slice(0,10).forEach(function(f) {
+      html += '<tr><td>' + escHtml(f.path) + '</td><td>' + (f.size ? (f.size/1024).toFixed(1) + 'KB' : '-') + '</td></tr>';
+    });
+    html += '</table>';
+    main.innerHTML = html;
+  }).catch(function(e) {
+    main.innerHTML = '<p class="red">加载失败: ' + (e.message||e) + '</p>';
+  });
+}
+
+// ── Media Library ──
+function loadMedia() {
+  var main = document.getElementById('main');
+  main.innerHTML = '<p>加载中...</p><div style="margin-top:12px"><input type="file" id="mediaUpload" accept="image/*" onchange="uploadMedia()" /></div>';
+  gh('/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1').then(function(data) {
+    if (data.message) { main.innerHTML = '<p class="red">' + data.message + '</p>'; return; }
+    var imgs = data.tree.filter(function(f) { return f.path.startsWith('assets/img/'); });
+    var html = '<div class="page-bar"><h2>🖼 媒体库</h2></div>';
+    html += '<div style="margin-bottom:12px"><input type="file" id="mediaUpload" accept="image/*" onchange="uploadMedia()" /> <span id="mediaStatus" class="dim"></span></div>';
+    if (imgs.length === 0) { html += '<p class="dim">暂无图片</p>'; main.innerHTML = html; return; }
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">';
+    imgs.forEach(function(f) {
+      var url = 'https://raw.githubusercontent.com/MEMZ-CHROER/dllHNWeb/master/' + f.path;
+      var name = f.path.split('/').pop();
+      html += '<div style="background:#111;border:1px solid #2a2a3a;overflow:hidden;">';
+      html += '<a href="' + url + '" target="_blank"><img src="' + url + '" style="width:100%;height:120px;object-fit:cover;display:block;" /></a>';
+      html += '<div style="padding:8px;font-size:12px;">';
+      html += '<div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + name + '</div>';
+      html += '<div class="dim">' + (f.size ? (f.size/1024).toFixed(1) + 'KB' : '') + '</div>';
+      html += '<div style="margin-top:4px;display:flex;gap:4px;">';
+      html += '<button class="btn btn-sm" onclick="copyMarkdown(\'' + url + '\',\'' + name + '\')">📋 MD</button>';
+      html += '<button class="btn btn-sm btn-red" onclick="delMedia(\'' + f.path + '\')">删除</button>';
+      html += '</div></div></div>';
+    });
+    html += '</div>';
+    main.innerHTML = html;
+  }).catch(function(e) {
+    main.innerHTML = '<p class="red">加载失败: ' + (e.message||e) + '</p>';
+  });
+}
+
+window.uploadMedia = function() {
+  var file = document.getElementById('mediaUpload').files[0];
+  if (!file) return;
+  document.getElementById('mediaStatus').textContent = '上传中...';
+  var reader = new FileReader();
+  reader.onload = function() {
+    var base64 = reader.result.split(',')[1];
+    var name = 'assets/img/' + file.name;
+    gh('/repos/' + REPO + '/contents/' + name, { method: 'PUT', body: JSON.stringify({
+      message: 'upload ' + file.name,
+      content: base64,
+      branch: BRANCH
+    })}).then(function(d) {
+      if (d.content) { document.getElementById('mediaStatus').textContent = '✅ 已上传'; loadMedia(); }
+      else document.getElementById('mediaStatus').textContent = '❌ 失败: ' + (d.message||'');
+    });
+  };
+  reader.readAsDataURL(file);
+};
+
+window.copyMarkdown = function(url, name) {
+  var md = '![' + name.replace(/\.[^.]+$/, '') + '](' + url + ')';
+  navigator.clipboard.writeText(md).then(function() {
+    var st = document.getElementById('mediaStatus');
+    if (st) st.textContent = '✅ 已复制 Markdown 链接';
+  });
+};
+
+window.delMedia = function(path) {
+  if (!confirm('确定删除 ' + path + ' ？')) return;
+  gh('/repos/' + REPO + '/contents/' + path, { method: 'DELETE', body: JSON.stringify({
+    message: 'delete ' + path, sha: shaMap[path], branch: BRANCH
+  })}).then(function(d) {
+    loadMedia();
+  });
+};
 
 function loadList() {
   document.getElementById('main').innerHTML = '<p>加载中...</p>';
