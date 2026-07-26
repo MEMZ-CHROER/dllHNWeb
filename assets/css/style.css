@@ -1,11 +1,11 @@
 /* ── DllHN / CSEL Site Theme ── */
 :root {
-  --bg: #1e1e2e;
-  --fg: #cdd6f4;
-  --accent: #89dceb;
-  --accent2: #89b4fa;
-  --border: #313244;
-  --card-bg: #181825;
+  --bg: #0c0c0c;
+  --fg: #cce8cc;
+  --accent: #00ff41;
+  --accent2: #00cc66;
+  --border: #1a3a1a;
+  --card-bg: #0f1a0f;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
