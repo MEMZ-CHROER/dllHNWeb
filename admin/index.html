@@ -244,19 +244,7 @@ function showModal(path, content) {
   h.push('<div class="modal" style="width:90vw;max-width:960px;">');
   h.push('<h3>编辑: ' + escHtml(path) + '</h3>');
   h.push('<label style="margin-bottom:4px">文件名</label><input type="text" id="mpath" value="' + escHtml(path) + '" style="margin-bottom:8px" />');
-  h.push('<div class="editor-wrap"><div class="editor-toolbar">');
-  h.push('<button onclick="ins(\'**\',\'**\',\'粗体\')"><b>B</b></button>');
-  h.push('<button onclick="ins(\'*\',\'*\',\'斜体\')"><i>I</i></button>');
-  h.push('<button onclick="ins(\'## \',\'\',\'标题\')">H</button>');
-  h.push('<button onclick="ins(\'<br>---<br>\',\'\',\'分隔线\')">—</button>');
-  h.push('<button onclick="ins(\'[\',\'](url)\',\'链接\')">🔗</button>');
-  h.push('<button onclick="ins(\'![](\',\'?)\',\'图片\')">🖼</button>');
-  h.push('<button onclick="ins(\'<br><br>```<br>\',\'<br>```<br>\',\'代码\')">&lt;/&gt;</button>');
-  h.push('<button onclick="ins(\'<br>- \',\'\',\'列表\')">•</button>');
-  h.push('<button onclick="ins(\'<br>> \',\'\',\'引用\')">❝</button>');
-  h.push('<button onclick="ins(\'$$<br>\',\'<br>$$\',\'公式\')">∑</button>');
-  h.push('<button onclick="ins(\'$\',\'$\',\'行内公式\')">∫</button>');
-  h.push('</div><div class="editor-panes">');
+  h.push('<div class="editor-wrap"><div class="editor-toolbar" id="modalToolbar"></div><div class="editor-panes">');
   h.push('<textarea id="mcontent" oninput="previewMd()">' + escHtml(content||'') + '</textarea>');
   h.push('<div class="editor-preview" id="mdPreview"></div>');
   h.push('</div></div>');
@@ -266,22 +254,38 @@ function showModal(path, content) {
   overlay.innerHTML = h.join('');
   document.body.appendChild(overlay);
   window._modalPath = path;
-  // Load KaTeX + marked then render preview
+  buildToolbar('modalToolbar', 'modal');
   if (!window.marked) loadEditorLibs(function() { previewMd(); });
   else setTimeout(previewMd, 100);
 }
 
-function ins(before, after, hint) {
-  var ta = document.getElementById('mcontent');
-  if (!ta) return;
-  var start = ta.selectionStart, end = ta.selectionEnd;
-  var sel = ta.value.substring(start, end) || hint;
-  before = before.replace(/<br>/g, '\n');
-  after = after.replace(/<br>/g, '\n');
-  ta.value = ta.value.substring(0, start) + before + sel + after + ta.value.substring(end);
-  ta.focus();
-  previewMd();
+function buildToolbar(containerId, fnPrefix) {
+  var tb = document.getElementById(containerId);
+  if (!tb) return;
+  var btns = [
+    ['**','**','B','粗体'],['*','*','I','斜体'],['## ','','H','标题'],
+    ['---\n','','—','分隔线'],['[','](url)','🔗','链接'],['![](','?)','🖼','图片'],
+    ['\n\n```\n','\n```\n','</>','代码'],['\n- ','','•','列表'],
+    ['\n> ','','❝','引用'],['$$\n','\n$$','∑','公式'],['$','$','∫','行内公式']
+  ];
+  btns.forEach(function(b) {
+    var btn = document.createElement('button');
+    btn.innerHTML = b[2];
+    btn.title = b[3];
+    btn.onclick = function() {
+      var ta = document.getElementById(fnPrefix === 'modal' ? 'mcontent' : 'ncontent');
+      if (!ta) return;
+      var start = ta.selectionStart, end = ta.selectionEnd;
+      var sel = ta.value.substring(start, end) || b[3];
+      ta.value = ta.value.substring(0, start) + b[0] + sel + b[1] + ta.value.substring(end);
+      ta.focus();
+      if (fnPrefix === 'modal') previewMd(); else previewNew();
+    };
+    tb.appendChild(btn);
+  });
 }
+
+function ins(before, after, hint) { // legacy
 
 function loadEditorLibs(cb) {
   var loaded = 0;
@@ -427,45 +431,19 @@ window.delFile = function(path) {
 // ── New Page ──
 function loadNew() {
   var defaultContent = '---\ntitle: 新页面\n---\n\n在这里写内容...';
-  document.getElementById('main').innerHTML = `
-<div class="page-bar"><h2>➕ 新建页面</h2></div>
-<label style="display:block;margin:8px 0 4px;opacity:.7">文件名 (不含 .md)</label>
-<input type="text" id="npath" placeholder="my-page" />
-<div class="editor-wrap" style="margin-top:8px">
-  <div class="editor-toolbar">
-    <button onclick="insNew('**','**','粗体')"><b>B</b></button>
-    <button onclick="insNew('*','*','斜体')"><i>I</i></button>
-    <button onclick="insNew('## ','','标题')">H</button>
-    <button onclick="insNew('[','](url)','链接')">🔗</button>
-    <button onclick="insNew('![](','?)','图片')">🖼</button>
-    <button onclick="insNew('<br><br>```<br>','<br>```<br>','代码')">&lt;/&gt;</button>
-    <button onclick="insNew('<br>- ','','列表')">•</button>
-    <button onclick="insNew('<br>> ','','引用')">❝</button>
-    <button onclick="insNew('$$<br>','<br>$$','公式')">∑</button>
-    <button onclick="insNew('$','$','行内公式')">∫</button>
-  </div>
-  <div class="editor-panes">
-    <textarea id="ncontent" oninput="previewNew()">${escHtml(defaultContent)}</textarea>
-    <div class="editor-preview" id="newPreview"></div>
-  </div>
-</div>
-<div style="margin-top:12px">
-  <button class="btn" onclick="createPage()">创建页面</button>
-</div>`;
+  var html = '<div class="page-bar"><h2>➕ 新建页面</h2></div>';
+  html += '<label style="display:block;margin:8px 0 4px;opacity:.7">文件名 (不含 .md)</label>';
+  html += '<input type="text" id="npath" placeholder="my-page" />';
+  html += '<div class="editor-wrap" style="margin-top:8px"><div class="editor-toolbar" id="newToolbar"></div>';
+  html += '<div class="editor-panes">';
+  html += '<textarea id="ncontent" oninput="previewNew()">' + escHtml(defaultContent) + '</textarea>';
+  html += '<div class="editor-preview" id="newPreview"></div></div></div>';
+  html += '<div style="margin-top:12px"><button class="btn" onclick="createPage()">创建页面</button></div>';
+  document.getElementById('main').innerHTML = html;
+  buildToolbar('newToolbar', 'new');
   loadEditorLibs(function() { previewNew(); });
 }
 
-function insNew(before, after, hint) {
-  var ta = document.getElementById('ncontent');
-  if (!ta) return;
-  var start = ta.selectionStart, end = ta.selectionEnd;
-  var sel = ta.value.substring(start, end) || hint;
-  before = before.replace(/<br>/g, '\n');
-  after = after.replace(/<br>/g, '\n');
-  ta.value = ta.value.substring(0, start) + before + sel + after + ta.value.substring(end);
-  ta.focus();
-  previewNew();
-}
 function previewNew() {
   var ta = document.getElementById('ncontent');
   var preview = document.getElementById('newPreview');
