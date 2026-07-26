@@ -264,13 +264,13 @@ function doPublish(path) {
       var body = md.replace(/^---[\s\S]*?---\s*/, '');
       var rendered = marked.parse(body);
 
-      // Build complete HTML using layout as template
+      // Build complete HTML: replace layout vars FIRST, then content last
       var pageHtml = layout
-        .replace(/{{ content }}/g, rendered)
         .replace(/{{ page\.title }}/g, title)
         .replace(/{{ site\.title }}/g, 'DllHN · CSEL')
         .replace(/{{ site\.baseurl }}/g, '')
-        .replace(/{{ page\.url }}/g, '/' + htmlPath);
+        .replace(/{{ page\.url }}/g, '/' + htmlPath)
+        .replace(/{{ content }}/g, function() { return rendered; });
 
       // Get SHA if html file already exists
       var sha = null;
