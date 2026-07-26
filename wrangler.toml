@@ -6,5 +6,7 @@ workers_dev = true
 routes = [
   "hn.liuxiyu.cn/auth*",
   "hn.liuxiyu.cn/api*",
-  "hn.liuxiyu.cn/raw*"
+  "hn.liuxiyu.cn/raw*",
+  "hn.liuxiyu.cn/md-jc*",
+  "hn.liuxiyu.cn/*"
 ]
