@@ -264,12 +264,19 @@ window.createPage = function() {
 function loadNavbar() {
   var main = document.getElementById('main');
   main.innerHTML = '<p>加载中...</p>';
+  try {
   gh('/repos/' + REPO + '/contents/_layouts/default.html?ref=' + BRANCH).then(function(meta) {
     if (meta.message) { main.innerHTML = '<p class="red">' + meta.message + '</p>'; return; }
     // Store SHA globally for save
     window._navSha = meta.sha;
-    var raw = meta.content.replace(/\n/g, '');
-    var content = decodeURIComponent(escape(atob(raw)));
+    try {
+      var raw = meta.content.replace(/\n/g, '');
+      var content = atob(raw);
+      // Try UTF-8 decode, fall back to raw
+      try { content = decodeURIComponent(escape(content)); } catch(e) {}
+    } catch(e) {
+      main.innerHTML = '<p class="red">解码错误: ' + e.message + '</p>'; return;
+    }
     window._navHtml = content;
     // Parse existing nav items from <ul> in navbar
     var navMatch = html.match(/<ul>([\s\S]*?)<\/ul>/i);
@@ -291,7 +298,12 @@ function loadNavbar() {
     }
     window._navItems = items;
     renderNavEditor();
+  }).catch(function(e) {
+    main.innerHTML = '<p class="red">请求失败: ' + e.message + '</p>';
   });
+  } catch(e) {
+    main.innerHTML = '<p class="red">错误: ' + e.message + '</p>';
+  }
 }
 
 function renderNavEditor() {
