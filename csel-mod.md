@@ -2,9 +2,9 @@
 title: CSEL Mod
 ---
 
-# CSEL Mod — Extension for Hacknet
+# CSEL Extension — Mod for Hacknet
 
-## 概述TEST
+## 概述
 
 CSEL Extension 是一个 BepInEx 插件，同时兼容原版 Hacknet（Steam）和 OpenHacknet。  
 一套代码，双平台构建。
