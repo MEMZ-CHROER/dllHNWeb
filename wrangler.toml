@@ -10,3 +10,8 @@ routes = [
   "hn.liuxiyu.cn/md-jc*",
   "hn.liuxiyu.cn/*"
 ]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "csel-users"
+database_id = "91a45a26-074e-4f2e-854b-296662c3dd7d"
