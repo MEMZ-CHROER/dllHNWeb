@@ -173,6 +173,7 @@ function render() {
   html += '<a class="nav-item'+(state==='settings'?' active':'')+'" onclick="go(\'settings\')">⚙ 站点设置</a>';
   html += '<a class="nav-item'+(state==='style'?' active':'')+'" onclick="go(\'style\')">🎨 样式编辑器</a>';
   html += '<a class="nav-item'+(state==='passwords'?' active':'')+'" onclick="go(\'passwords\')">🔐 页面密码</a>';
+  html += '<a class="nav-item'+(state==='search'?' active':'')+'" onclick="go(\'search\')">🔍 搜索</a>';
   html += '<a class="nav-item" onclick="logout()" style="color:#666;margin-top:20px;">🚪 退出</a>';
   html += '</div>';
   html += '<div class="main" id="main"></div>';
@@ -211,6 +212,7 @@ function loadPage() {
   else if (state === 'settings') loadSettings();
   else if (state === 'style') loadStyle();
   else if (state === 'passwords') loadPasswords();
+  else if (state === 'search') loadSearch();
 }
 
 // ── Dashboard ──
@@ -401,6 +403,64 @@ window.saveAllPw = function() {
     });
   });
 };
+
+// ── Search ──
+function loadSearch() {
+  var main = document.getElementById('main');
+  main.innerHTML = '<div class="page-bar"><h2>🔍 搜索全站</h2></div>' +
+    '<input type="text" id="searchQuery" placeholder="输入关键词搜索所有页面…" onkeyup="if(event.key==\'Enter\')doSearch()" style="width:100%;padding:10px;font-size:15px;" />' +
+    '<div style="margin-top:8px"><button class="btn" onclick="doSearch()">搜索</button></div>' +
+    '<div id="searchResults" style="margin-top:16px"></div>';
+  document.getElementById('searchQuery').focus();
+}
+
+window.doSearch = function() {
+  var q = document.getElementById('searchQuery').value.trim().toLowerCase();
+  var results = document.getElementById('searchResults');
+  if (!q) { results.innerHTML = ''; return; }
+  results.innerHTML = '<p>搜索中...</p>';
+  gh('/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1').then(function(data) {
+    if (data.message) { results.innerHTML = '<p class="red">' + data.message + '</p>'; return; }
+    var mds = data.tree.filter(function(f) { return f.path.endsWith('.md') && f.path !== 'README.md'; });
+    var found = [];
+    var loaded = 0;
+    mds.forEach(function(f) {
+      ghRaw('/repos/' + REPO + '/contents/' + f.path + '?ref=' + BRANCH).then(function(content) {
+        loaded++;
+        var text = content.toLowerCase();
+        if (text.indexOf(q) > -1) {
+          var excerpt = '';
+          var idx = text.indexOf(q);
+          var start = Math.max(0, idx - 40);
+          var end = Math.min(text.length, idx + q.length + 40);
+          excerpt = content.substring(start, end).replace(/\n/g, ' ').trim();
+          if (start > 0) excerpt = '...' + excerpt;
+          if (end < content.length) excerpt += '...';
+          found.push({ path: f.path, excerpt: excerpt });
+        }
+        if (loaded >= mds.length) {
+          renderSearchResults(q, found, results);
+        }
+      });
+    });
+    if (mds.length === 0) results.innerHTML = '<p class="dim">没有页面</p>';
+  });
+};
+
+function renderSearchResults(q, found, results) {
+  if (found.length === 0) {
+    results.innerHTML = '<p class="dim">未找到包含 "' + q + '" 的页面</p>';
+    return;
+  }
+  var html = '<p>找到 ' + found.length + ' 个结果：</p><table>';
+  found.forEach(function(f) {
+    var pagePath = f.path.replace('.md', '');
+    html += '<tr><td><a href="' + SITE + '/' + pagePath + '" target="_blank">' + f.path + '</a><br><span class="dim" style="font-size:12px;">' + escHtml(f.excerpt) + '</span></td>';
+    html += '<td style="width:80px"><button class="btn btn-sm" onclick="editFile(\'' + f.path + '\')">编辑</button></td></tr>';
+  });
+  html += '</table>';
+  results.innerHTML = html;
+}
 
 function loadList() {
   document.getElementById('main').innerHTML = '<p>加载中...</p>';
