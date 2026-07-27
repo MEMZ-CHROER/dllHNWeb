@@ -625,7 +625,7 @@ window.delFile = function(path) {
 
 // ── New Page ──
 function loadNew() {
-  var defaultContent = '---\ntitle: 新页面\n---\n\n在这里写内容...';
+  var defaultContent = '在这里写内容...\n\n---\n> 需要标题？在文件开头加上 YAML 头：\n> ```\n> ---\n> title: 页面标题\n> ---\n> ```';
   var html = '<div class="page-bar"><h2>➕ 新建页面</h2></div>';
   html += '<label style="display:block;margin:8px 0 4px;opacity:.7">文件名 (不含 .md)</label>';
   html += '<input type="text" id="npath" placeholder="my-page" />';
