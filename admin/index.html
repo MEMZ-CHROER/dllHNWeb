@@ -119,9 +119,18 @@ var _session = null;
 
 // ── GitHub API ──
 function gh(url, opts) {
+  opts = opts || {};
+  // Auto-inject session token into write operations for backend permission check
+  if (opts.body && _session && _session.token) {
+    try {
+      var bodyObj = JSON.parse(opts.body);
+      bodyObj._token = _session.token;
+      opts.body = JSON.stringify(bodyObj);
+    } catch(e) {}
+  }
   return fetch('/api' + url, Object.assign({
     headers: { Accept: 'application/vnd.github.v3+json' }
-  }, opts || {})).then(function(r) {
+  }, opts)).then(function(r) {
     return r.json().catch(function() {
       return r.text().then(function(t) { throw new Error('HTTP ' + r.status + ': ' + t.substring(0,80)); });
     });
@@ -171,8 +180,8 @@ function render() {
   if (hasPerm('pages')) html += '<a class="nav-item'+(state==='new'?' active':'')+'" onclick="go(\'new\')">➕ 新建页面</a>';
   if (hasPerm('passwords')) html += '<a class="nav-item'+(state==='passwords'?' active':'')+'" onclick="go(\'passwords\')">🔐 页面密码</a>';
   if (isAdmin()) html += '<a class="nav-item'+(state==='users'?' active':'')+'" onclick="go(\'users\')">👥 用户管理</a>';
-  html += '<a class="nav-item'+(state==='settings'?' active':'')+'" onclick="go(\'settings\')">⚙ 站点设置</a>';
-  html += '<a class="nav-item'+(state==='style'?' active':'')+'" onclick="go(\'style\')">🎨 样式编辑器</a>';
+  if (isAdmin()) html += '<a class="nav-item'+(state==='settings'?' active':'')+'" onclick="go(\'settings\')">⚙ 站点设置</a>';
+  if (isAdmin()) html += '<a class="nav-item'+(state==='style'?' active':'')+'" onclick="go(\'style\')">🎨 样式编辑器</a>';
   html += '<a class="nav-item'+(state==='search'?' active':'')+'" onclick="go(\'search\')">🔍 搜索</a>';
   html += '<div style="padding:8px 12px;font-size:12px;opacity:.6">' + _session.username + ' (' + _session.role + ')</div>';
   html += '<a class="nav-item" onclick="logout()" style="color:#666">🚪 退出</a>';
@@ -228,12 +237,12 @@ function loadPage() {
   else if (state === 'pages') loadList();
   else if (state === 'media') loadMedia();
   else if (state === 'navbar') loadNavbar();
-  else if (state === 'new') loadNew();
+  else if (state === 'new') { if (!hasPerm('pages')) { go('dashboard'); return; } loadNew(); }
   else if (state === 'settings') loadSettings();
   else if (state === 'style') loadStyle();
-  else if (state === 'passwords') loadPasswords();
+  else if (state === 'passwords') { if (!hasPerm('passwords')) { go('dashboard'); return; } loadPasswords(); }
   else if (state === 'search') loadSearch();
-  else if (state === 'users') loadUsers();
+  else if (state === 'users') { if (!isAdmin()) { go('dashboard'); return; } loadUsers(); }
 }
 
 // ── Dashboard ──
@@ -252,9 +261,9 @@ function loadDashboard() {
     html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;text-align:center"><div style="font-size:32px;color:#00d4aa;font-weight:bold">' + data.tree.length + '</div><div class="dim">文件</div></div>';
     html += '</div>';
     html += '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px;">';
-    html += '<button class="btn" onclick="go(\'new\')">➕ 新建页面</button>';
-    html += '<button class="btn" onclick="go(\'media\')">🖼 上传图片</button>';
-    html += '<button class="btn" onclick="go(\'navbar\')">🔗 编辑导航</button>';
+    if (hasPerm('pages')) html += '<button class="btn" onclick="go(\'new\')">➕ 新建页面</button>';
+    if (hasPerm('media')) html += '<button class="btn" onclick="go(\'media\')">🖼 上传图片</button>';
+    if (hasPerm('navbar')) html += '<button class="btn" onclick="go(\'navbar\')">🔗 编辑导航</button>';
     html += '<button class="btn" onclick="go(\'style\')">🎨 编辑样式</button>';
     html += '</div>';
     html += '<b>最近更新</b><table><tr><th>文件</th><th>大小</th></tr>';
@@ -270,6 +279,7 @@ function loadDashboard() {
 
 // ── Media Library ──
 function loadMedia() {
+  if (!hasPerm('media')) { go('dashboard'); return; }
   var main = document.getElementById('main');
   main.innerHTML = '<p>加载中...</p><div style="margin-top:12px"><input type="file" id="mediaUpload" accept="image/*" onchange="uploadMedia()" /></div>';
   gh('/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1').then(function(data) {
@@ -542,6 +552,7 @@ function renderSearchResults(q, found, results) {
 }
 
 function loadList() {
+  if (!hasPerm('pages')) { go('dashboard'); return; }
   document.getElementById('main').innerHTML = '<p>加载中...</p>';
   gh('/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1').then(function(data) {
     if (data.message) { document.getElementById('main').innerHTML = '<p class="red">' + data.message + '</p>'; return; }
@@ -555,7 +566,7 @@ function loadList() {
       html += '<tr><td><a href="' + SITE + '/' + f.path.replace('.md','') + '" target="_blank">' + f.path + '</a></td>';
       html += '<td class="dim">' + title + '</td>';
       html += '<td><button class="btn btn-sm" onclick="editFile(\'' + f.path + '\')">编辑</button> ';
-      html += '<button class="btn btn-sm btn-amber" onclick="quickPublish(\'' + f.path + '\')">⚡发布</button> ';
+      if (isAdmin()) html += '<button class="btn btn-sm btn-amber" onclick="quickPublish(\'' + f.path + '\')">⚡发布</button> ';
       html += '<button class="btn btn-sm btn-red" onclick="delFile(\'' + f.path + '\')">删除</button></td></tr>';
     });
     html += '</table><p class="dim" style="margin-top:8px">⚡发布 = 直接提交 HTML 版本，立刻生效（不等 Pages 构建）</p>';
@@ -813,6 +824,7 @@ window.createPage = function() {
 // ── Navbar Editor ──
 // ── 站点设置 ──
 function loadSettings() {
+  if (!isAdmin()) { go('dashboard'); return; }
   var main = document.getElementById('main');
   main.innerHTML = '<p>加载中...</p>';
   gh('/repos/' + REPO + '/contents/_config.yml?ref=' + BRANCH).then(function(meta) {
@@ -868,6 +880,7 @@ window.saveSettings = function() {
 var _styleVars = {};
 
 function loadStyle() {
+  if (!isAdmin()) { go('dashboard'); return; }
   var main = document.getElementById('main');
   main.innerHTML = '<p>加载中...</p>';
   gh('/repos/' + REPO + '/contents/assets/css/style.css?ref=' + BRANCH).then(function(meta) {
@@ -988,6 +1001,7 @@ window.saveStyleGui = function() {
 };
 
 function loadNavbar() {
+  if (!hasPerm('navbar')) { go('dashboard'); return; }
   var main = document.getElementById('main');
   if (!main) { alert('main element missing'); return; }
   main.innerHTML = '<p>加载中...</p>';
