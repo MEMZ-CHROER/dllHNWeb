@@ -10,11 +10,11 @@ Hacknet 是一款终端模拟黑客游戏。本页面整理了基于 OpenHacknet
 
 ## 目录
 
-### [📖 基础操作](commands)
+### [📖 基础操作](/hacknet/commands)
 包括所有命令、文件系统、进程管理等入门知识。
 
-### [⚙ 核心机制](mechanics)
+### [⚙ 核心机制](/hacknet/mechanics)
 深入解析端口破解、防火墙、代理、追踪系统等技术细节。
 
-### [📜 主线剧情](story)
+### [📜 主线剧情](/hacknet/story)
 从 Bit 的第一封邮件到最终结局的完整故事线。
