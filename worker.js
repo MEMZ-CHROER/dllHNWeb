@@ -16,19 +16,31 @@ function json(data, status = 200) {
   });
 }
 
+async function getSession(token, db) {
+  if (!token || typeof token !== "string") return null;
+  const { results } = await db.prepare(
+    "SELECT u.id, u.username, u.role, u.permissions FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = ?"
+  ).bind(token).all();
+  if (!results || results.length === 0) return null;
+  return results[0];
+}
+
+async function requirePerm(token, db, perm) {
+  const user = await getSession(token, db);
+  if (!user) return false;
+  return user.permissions === "all" || (user.permissions && user.permissions.indexOf(perm) > -1);
+}
+
+async function isAdmin(token, db) {
+  const user = await getSession(token, db);
+  return user && user.role === "admin";
+}
+
 async function sha256(input) {
   const encoder = new TextEncoder();
   const data = encoder.encode(input);
   const hash = await crypto.subtle.digest("SHA-256", data);
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-async function isAdmin(token, db) {
-  if (!token || typeof token !== "string") return false;
-  const { results } = await db.prepare(
-    "SELECT u.role FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = ?"
-  ).bind(token).all();
-  return results && results.length > 0 && results[0].role === "admin";
 }
 
 function sanitize(input, maxLen = MAX_USERNAME_LEN) {
@@ -99,6 +111,7 @@ export default {
     // Login
     if (path === "/api/auth/login" && request.method === "POST") {
       const clientIp = request.headers.get("CF-Connecting-IP") || "unknown";
+      try {
       if (!checkRateLimit(clientIp)) {
         return json({ error: "too many attempts, try later" }, 429);
       }
@@ -112,22 +125,20 @@ export default {
       const user = results[0];
       const hash = await sha256(password);
       if (hash !== user.password_hash) return json({ error: "invalid credentials" }, 401);
-      const token = await sha256(username + ":" + hash + ":" + crypto.randomUUID());
+      const token = await sha256(username + ":" + hash + ":" + Math.random().toString(36).slice(2));
       await env.DB.prepare("INSERT INTO sessions (user_id, token) VALUES (?, ?)").bind(user.id, token).run();
-      // Reset rate limit on success
       loginAttempts.delete(clientIp);
       return json({ token, username: user.username, role: user.role, permissions: user.permissions || "all" });
+      } catch(e) { return json({ error: "login error: " + e.message }, 500); }
     }
 
     // Verify session
     if (path === "/api/auth/check" && request.method === "POST") {
       const body = await request.json();
       if (!body.token || typeof body.token !== "string") return json({ valid: false });
-      const { results } = await env.DB.prepare(
-        "SELECT u.id, u.username, u.role FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = ?"
-      ).bind(body.token).all();
-      if (!results || results.length === 0) return json({ valid: false });
-      return json({ valid: true, username: results[0].username, role: results[0].role, permissions: results[0].permissions || "all" });
+      const user = await getSession(body.token, env.DB);
+      if (!user) return json({ valid: false });
+      return json({ valid: true, username: user.username, role: user.role, permissions: user.permissions || "all" });
     }
 
     // Logout
@@ -200,7 +211,10 @@ export default {
     if (path.startsWith("/api/") || path.startsWith("/raw/")) {
       const isRaw = path.startsWith("/raw/");
       const target = GH_API + path.replace(/^\/(api|raw)/, "") + url.search;
+      const targetPath = path.replace(/^\/(api|raw)\//, "/");
       const cache = caches.default;
+
+      // GET — no permission check needed (read-only)
       if (request.method === "GET") {
         const cacheKey = new Request(target, request);
         let cached = await cache.match(cacheKey);
@@ -213,9 +227,42 @@ export default {
         ctx.waitUntil(cache.put(cacheKey, res.clone()));
         return res;
       }
+
+      // PUT/DELETE — require session token and check permissions
+      const clone = request.clone();
+      let bodyData;
+      try { bodyData = await clone.json(); } catch(e) { bodyData = {}; }
+      const token = bodyData._token || "";
+
+      // Permission matrix based on target file path
+      const isPasswords = targetPath.includes("/contents/_passwords.json");
+      const isConfig = targetPath.includes("/contents/_config.yml");
+      const isStyle = targetPath.includes("/contents/assets/css/style.css");
+      const isMedia = targetPath.includes("/contents/assets/img/");
+      const isNavbar = targetPath.includes("/contents/_layouts/default.html");
+      const isPage = /\/contents\/.*\.(md|html)$/.test(targetPath);
+      const isPagesBuild = targetPath.includes("/pages/builds");
+
+      if (isPasswords) {
+        if (!await requirePerm(token, env.DB, "passwords")) return json({ error: "need 'passwords' permission" }, 403);
+      } else if (isConfig || isStyle) {
+        if (!await isAdmin(token, env.DB)) return json({ error: "admin only" }, 403);
+      } else if (isMedia) {
+        if (!await requirePerm(token, env.DB, "media")) return json({ error: "need 'media' permission" }, 403);
+      } else if (isNavbar) {
+        if (!await requirePerm(token, env.DB, "navbar")) return json({ error: "need 'navbar' permission" }, 403);
+      } else if (isPage || isPagesBuild) {
+        if (!await requirePerm(token, env.DB, "pages")) return json({ error: "need 'pages' permission" }, 403);
+      } else {
+        // Unknown path — admin only for safety
+        if (!await isAdmin(token, env.DB)) return json({ error: "unauthorized" }, 403);
+      }
+
+      // Strip _token before forwarding, rebuild body
+      delete bodyData._token;
       const headers = { Authorization: "Bearer " + env.GITHUB_TOKEN, "Content-Type": "application/json", "User-Agent": "CSEL-Worker" };
       headers.Accept = "application/vnd.github.v3+json";
-      return fetch(target, { method: request.method, headers, body: request.body });
+      return fetch(target, { method: request.method, headers, body: JSON.stringify(bodyData) });
     }
 
     // ═══════════════════════════════════════════════
