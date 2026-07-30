@@ -266,6 +266,38 @@ export default {
     }
 
     // ═══════════════════════════════════════════════
+    //  SITEMAP GENERATOR
+    // ═══════════════════════════════════════════════
+    if (path === '/sitemap.xml' && request.method === 'GET') {
+      const cache = caches.default;
+      const cacheKey = new Request('https://sitemap-cache/dllhn-sitemap', request);
+      let cached = await cache.match(cacheKey);
+      if (cached) return cached;
+      const treeUrl = GH_API + '/repos/MEMZ-CHROER/dllHNWeb/git/trees/master?recursive=1';
+      const treeRes = await fetch(treeUrl, {
+        headers: { Authorization: "Bearer " + env.GITHUB_TOKEN, "User-Agent": "CSEL-Worker" },
+      });
+      if (!treeRes.ok) return new Response('Failed to fetch repo tree', { status: 500 });
+      const treeData = await treeRes.json();
+      const pages = (treeData.tree || []).filter(f => f.path.endsWith('.md') && f.path !== 'README.md' && f.path !== 'test.md');
+      const siteUrl = 'https://hn.liuxiyu.cn';
+      const now = new Date().toISOString().split('T')[0];
+      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+      xml += `  <url><loc>${siteUrl}/</loc><priority>1.0</priority><lastmod>${now}</lastmod></url>\n`;
+      pages.forEach(f => {
+        const urlPath = '/' + f.path.replace('.md', '');
+        const priority = f.path.startsWith('hacknet/') ? '0.7' : '0.8';
+        xml += `  <url><loc>${siteUrl}${urlPath}</loc><priority>${priority}</priority><lastmod>${now}</lastmod></url>\n`;
+      });
+      xml += '</urlset>\n';
+      const res = new Response(xml, {
+        headers: { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=3600" },
+      });
+      ctx.waitUntil(cache.put(cacheKey, res.clone()));
+      return res;
+    }
+
+    // ═══════════════════════════════════════════════
     //  PAGE PASSWORD PROTECTION
     // ═══════════════════════════════════════════════
     var pagePath = path.replace(/\/$/, '');
