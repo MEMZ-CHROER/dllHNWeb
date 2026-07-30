@@ -77,6 +77,37 @@ th { color:#666; font-weight:normal; font-size:13px; }
 .warn { background:#1a1a28; border:1px solid #f39c12; padding:12px 16px; margin:12px 0; font-size:13px; }
 .warn b { color:#f39c12; }
 
+/* ── Light Theme ── */
+body.theme-light { background:#f5f5f0; color:#2c2c2c; }
+.theme-light input, .theme-light textarea, .theme-light select { background:#fff; border-color:#ccc; color:#333; }
+.theme-light button { color:#333; }
+.theme-light .sidebar { background:#eee; border-right-color:#ccc; }
+.theme-light .sidebar .logo { color:#1a7a5a; }
+.theme-light .sidebar .nav-item { color:#555; }
+.theme-light .sidebar .nav-item:hover, .theme-light .sidebar .nav-item.active { background:#ddd; color:#000; }
+.theme-light .main { background:#f5f5f0; }
+.theme-light table th, .theme-light table td { border-bottom-color:#ddd; }
+.theme-light .modal { background:#fff; border-color:#ccc; }
+.theme-light .editor-toolbar { background:#eee; border-color:#ccc; }
+.theme-light .editor-toolbar button { background:#fff; border-color:#ccc; color:#333; }
+.theme-light .editor-panes textarea { background:#fff; color:#333; }
+.theme-light .editor-preview { background:#fafaf5; color:#333; border-left-color:#ccc; }
+.theme-light .editor-preview code { background:#eee; }
+.theme-light .editor-preview pre { background:#eee; }
+.theme-light .warn { background:#fff8e1; border-color:#f39c12; }
+.theme-light .warn b { color:#e67e22; }
+.theme-light .green { color:#1a7a5a; }
+.theme-light .dim { opacity:.6; }
+.theme-light .btn { border-color:#1a7a5a; color:#1a7a5a; }
+.theme-light .btn:hover { background:#1a7a5a; color:#fff; }
+.theme-light .btn-red { border-color:#c0392b; color:#c0392b; }
+.theme-light .btn-red:hover { background:#c0392b; color:#fff; }
+.theme-light .btn-amber { border-color:#e67e22; color:#e67e22; }
+.theme-light .btn-amber:hover { background:#e67e22; color:#fff; }
+.theme-light [class^="btn"]:disabled { opacity:.4; cursor:default; }
+.theme-light .page-bar h2 { color:#1a7a5a; }
+.theme-light .hamburger { color:#1a7a5a; border-color:#ccc; }
+
 /* ── Mobile Responsive ── */
 .hamburger { display:none; position:fixed; top:12px; left:12px; z-index:200; background:none; border:1px solid #2a2a3a; color:#00d4aa; font-size:22px; padding:4px 12px; cursor:pointer; }
 .sidebar-overlay { display:none; }
@@ -182,8 +213,12 @@ function render() {
   if (isAdmin()) html += '<a class="nav-item'+(state==='users'?' active':'')+'" onclick="go(\'users\')">👥 用户管理</a>';
   if (isAdmin()) html += '<a class="nav-item'+(state==='settings'?' active':'')+'" onclick="go(\'settings\')">⚙ 站点设置</a>';
   if (isAdmin()) html += '<a class="nav-item'+(state==='style'?' active':'')+'" onclick="go(\'style\')">🎨 样式编辑器</a>';
+  if (isAdmin()) html += '<a class="nav-item'+(state==='pagesbuild'?' active':'')+'" onclick="go(\'pagesbuild\')">🚀 Pages 构建</a>';
   html += '<a class="nav-item'+(state==='search'?' active':'')+'" onclick="go(\'search\')">🔍 搜索</a>';
+  if (isAdmin()) html += '<a class="nav-item'+(state==='sitemap'?' active':'')+'" onclick="go(\'sitemap\')">🗺 站点地图</a>';
   html += '<div style="padding:8px 12px;font-size:12px;opacity:.6">' + _session.username + ' (' + _session.role + ')</div>';
+  var currentTheme = localStorage.getItem('csel_theme') || 'dark';
+  html += '<a class="nav-item" onclick="toggleTheme()" style="color:#666">' + (currentTheme === 'dark' ? '☀️ 亮色主题' : '🌙 暗色主题') + '</a>';
   html += '<a class="nav-item" onclick="logout()" style="color:#666">🚪 退出</a>';
   html += '</div>';
   html += '<div class="main" id="main"></div>';
@@ -241,7 +276,8 @@ function loadPage() {
   else if (state === 'settings') loadSettings();
   else if (state === 'style') loadStyle();
   else if (state === 'passwords') { if (!hasPerm('passwords')) { go('dashboard'); return; } loadPasswords(); }
-  else if (state === 'search') loadSearch();
+  else if (state === 'pagesbuild') { if (!isAdmin()) { go('dashboard'); return; } loadPagesBuild(); }
+  else if (state === 'sitemap') { if (!isAdmin()) { go('dashboard'); return; } loadSitemap(); }
   else if (state === 'users') { if (!isAdmin()) { go('dashboard'); return; } loadUsers(); }
 }
 
@@ -249,7 +285,12 @@ function loadPage() {
 function loadDashboard() {
   var main = document.getElementById('main');
   main.innerHTML = '<p>加载中...</p>';
-  gh('/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1').then(function(data) {
+  Promise.all([
+    gh('/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1'),
+    gh('/repos/' + REPO + '/commits?per_page=5').catch(function() { return []; })
+  ]).then(function(results) {
+    var data = results[0];
+    var commits = results[1] || [];
     if (data.message) { main.innerHTML = '<p class="red">' + data.message + '</p>'; return; }
     var mds = data.tree.filter(function(f) { return f.path.endsWith('.md') && f.path !== 'README.md'; });
     var imgs = data.tree.filter(function(f) { return f.path.startsWith('assets/img/'); });
@@ -259,14 +300,29 @@ function loadDashboard() {
     html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;text-align:center"><div style="font-size:32px;color:#00d4aa;font-weight:bold">' + mds.length + '</div><div class="dim">页面</div></div>';
     html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;text-align:center"><div style="font-size:32px;color:#00d4aa;font-weight:bold">' + imgs.length + '</div><div class="dim">图片</div></div>';
     html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;text-align:center"><div style="font-size:32px;color:#00d4aa;font-weight:bold">' + data.tree.length + '</div><div class="dim">文件</div></div>';
+    html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;text-align:center"><div style="font-size:32px;color:#00d4aa;font-weight:bold">' + (Array.isArray(commits) ? commits.length : 0) + '</div><div class="dim">最近提交</div></div>';
     html += '</div>';
     html += '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px;">';
     if (hasPerm('pages')) html += '<button class="btn" onclick="go(\'new\')">➕ 新建页面</button>';
     if (hasPerm('media')) html += '<button class="btn" onclick="go(\'media\')">🖼 上传图片</button>';
     if (hasPerm('navbar')) html += '<button class="btn" onclick="go(\'navbar\')">🔗 编辑导航</button>';
     html += '<button class="btn" onclick="go(\'style\')">🎨 编辑样式</button>';
+    html += '<button class="btn" onclick="go(\'sitemap\')">🗺 站点地图</button>';
     html += '</div>';
-    html += '<b>最近更新</b><table><tr><th>文件</th><th>大小</th></tr>';
+
+    // Recent commits
+    if (Array.isArray(commits) && commits.length > 0) {
+      html += '<b>最近提交</b><table><tr><th>时间</th><th>作者</th><th>描述</th></tr>';
+      commits.forEach(function(c) {
+        var date = c.commit ? c.commit.author.date.substring(0, 10) : '?';
+        var author = c.commit ? c.commit.author.name : '?';
+        var msg = c.commit ? c.commit.message.split('\n')[0] : '?';
+        html += '<tr><td style="white-space:nowrap">' + date + '</td><td>' + escHtml(author) + '</td><td class="dim">' + escHtml(msg) + '</td></tr>';
+      });
+      html += '</table>';
+    }
+
+    html += '<b>最近文件变更</b><table><tr><th>文件</th><th>大小</th></tr>';
     recent.slice(0,10).forEach(function(f) {
       html += '<tr><td>' + escHtml(f.path) + '</td><td>' + (f.size ? (f.size/1024).toFixed(1) + 'KB' : '-') + '</td></tr>';
     });
@@ -372,8 +428,8 @@ function loadPasswords() {
       var pagePath = '/' + f.path.replace('.md', '');
       var hasPw = pwData[pagePath] ? pwData[pagePath] : '';
       html += '<tr><td>' + f.path.replace('.md', '') + '</td>';
-      html += '<td><input type="text" id="pw_' + pagePath.replace(/\//g, '_') + '" value="' + escHtml(hasPw) + '" placeholder="留空 = 不加密" style="width:160px;font-size:13px;" /></td>';
-      html += '<td><button class="btn btn-sm" onclick="savePw(\'' + pagePath + '\')">保存</button></td></tr>';
+      html += '<td><input type="text" data-page-path="' + escHtml(pagePath) + '" value="' + escHtml(hasPw) + '" placeholder="留空 = 不加密" style="width:160px;font-size:13px;" /></td>';
+      html += '<td><button class="btn btn-sm" onclick="savePw(this)">保存</button></td></tr>';
     });
     html += '</table>';
     html += '<div style="margin-top:12px"><button class="btn" onclick="saveAllPw()">💾 保存全部密码</button> <span id="pwStatus" class="dim"></span></div>';
@@ -383,10 +439,12 @@ function loadPasswords() {
   });
 }
 
-window.savePw = function(pagePath) {
-  var key = 'pw_' + pagePath.replace(/\//g, '_');
-  var val = document.getElementById(key).value.trim();
-  // Save single password by re-loading, modifying, saving
+window.savePw = function(btn) {
+  var row = btn.closest('tr');
+  var inp = row ? row.querySelector('input[data-page-path]') : null;
+  if (!inp) return;
+  var pagePath = inp.getAttribute('data-page-path');
+  var val = inp.value.trim();
   document.getElementById('pwStatus').textContent = '保存中...';
   gh('/repos/' + REPO + '/contents/_passwords.json?ref=' + BRANCH).then(function(meta) {
     var raw = meta.content.replace(/\n/g, '');
@@ -411,15 +469,11 @@ window.savePw = function(pagePath) {
 window.saveAllPw = function() {
   document.getElementById('pwStatus').textContent = '保存中...';
   gh('/repos/' + REPO + '/contents/_passwords.json?ref=' + BRANCH).then(function(meta) {
-    var raw = meta.content.replace(/\n/g, '');
-    var txt = atob(raw);
-    try { txt = decodeURIComponent(escape(txt)); } catch(e) {}
-    var pwData = JSON.parse(txt);
-    // Read all input fields
-    var inputs = document.querySelectorAll('[id^="pw_"]');
+    // Read all password inputs using data attributes
+    var inputs = document.querySelectorAll('input[data-page-path]');
     var newData = {};
     inputs.forEach(function(inp) {
-      var pagePath = '/' + inp.id.replace(/^pw_/, '').replace(/_/g, '/');
+      var pagePath = inp.getAttribute('data-page-path');
       if (inp.value.trim()) newData[pagePath] = inp.value.trim();
     });
     var newContent = JSON.stringify(newData, null, 2);
@@ -566,6 +620,7 @@ function loadList() {
       html += '<tr><td><a href="' + SITE + '/' + f.path.replace('.md','') + '" target="_blank">' + f.path + '</a></td>';
       html += '<td class="dim">' + title + '</td>';
       html += '<td><button class="btn btn-sm" onclick="editFile(\'' + f.path + '\')">编辑</button> ';
+      html += '<button class="btn btn-sm" onclick="dupFile(\'' + f.path + '\')">📋复制</button> ';
       if (isAdmin()) html += '<button class="btn btn-sm btn-amber" onclick="quickPublish(\'' + f.path + '\')">⚡发布</button> ';
       html += '<button class="btn btn-sm btn-red" onclick="delFile(\'' + f.path + '\')">删除</button></td></tr>';
     });
@@ -581,27 +636,139 @@ function editFile(path) {
   });
 }
 
+function parseFrontmatter(raw) {
+  var m = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+  if (!m) return { meta: {}, body: raw };
+  var meta = {};
+  m[1].split('\n').forEach(function(line) {
+    var kv = line.match(/^\s*(\w+)\s*:\s*(.+)$/);
+    if (kv) meta[kv[1]] = kv[2].trim().replace(/^["']|["']$/g, '');
+  });
+  return { meta: meta, body: (m[2]||'').trimStart() };
+}
+
+function buildFrontmatter(meta, body) {
+  var fm = '---\n';
+  if (meta.title) fm += 'title: ' + meta.title + '\n';
+  if (meta.layout) fm += 'layout: ' + meta.layout + '\n';
+  fm += '---\n\n' + body.trimStart();
+  return fm;
+}
+
+// ── Draft Auto-Save ──
+const DRAFT_PREFIX = 'csel_draft_';
+
+function draftKey(path) { return DRAFT_PREFIX + path; }
+
+function saveDraft(path, content) {
+  try { localStorage.setItem(draftKey(path), content); } catch(e) {}
+}
+
+function loadDraft(path) {
+  try { return localStorage.getItem(draftKey(path)); } catch(e) { return null; }
+}
+
+function clearDraft(path) {
+  try { localStorage.removeItem(draftKey(path)); } catch(e) {}
+}
+
+function hasDraft(path) {
+  return loadDraft(path) !== null;
+}
+
+function wordCount(text) {
+  var words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  var lines = text ? text.split('\n').length : 0;
+  var paras = text ? text.split(/\n\s*\n/).filter(function(p) { return p.trim(); }).length : 0;
+  return { words: words, lines: lines, paras: paras };
+}
+
+function updateEditorStats(prefix) {
+  var el = document.getElementById(prefix + '_stats');
+  if (!el) return;
+  var ta = document.getElementById(prefix === 'modal' ? 'mcontent' : 'ncontent');
+  if (!ta) { el.textContent = ''; return; }
+  var wc = wordCount(ta.value);
+  el.textContent = wc.lines + ' 行 · ' + wc.words + ' 字 · ' + wc.paras + ' 段';
+}
+
 function showModal(path, content) {
+  var parsed = parseFrontmatter(content || '');
+  var meta = parsed.meta;
+  var body = parsed.body;
+  var isNew = !content || content.trim() === '';
+  // Check for draft
+  var draft = loadDraft(path);
+  var draftNotice = '';
+  if (draft !== null) {
+    var draftParsed = parseFrontmatter(draft);
+    if (draftParsed.body !== body && !isNew) {
+      draftNotice = '<div class="warn" style="margin-bottom:8px"><b>💾 草稿已恢复</b> 上次未保存的编辑已自动加载。 <button class="btn btn-sm" onclick="discardDraft(\'' + path + '\')">丢弃草稿</button></div>';
+      body = draftParsed.body;
+      if (draftParsed.meta.title) meta.title = draftParsed.meta.title;
+      if (draftParsed.meta.layout) meta.layout = draftParsed.meta.layout;
+    }
+  }
   var overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
-  // Build HTML with array to avoid template literal backtick issues
   var h = [];
   h.push('<div class="modal" style="width:90vw;max-width:960px;">');
   h.push('<h3>编辑: ' + escHtml(path) + '</h3>');
-  h.push('<label style="margin-bottom:4px">文件名</label><input type="text" id="mpath" value="' + escHtml(path) + '" style="margin-bottom:8px" />');
+  h.push('<label style="margin-bottom:4px">文件名</label><input type="text" id="mpath" value="' + escHtml(path) + '" style="width:100%;margin-bottom:8px;" />');
+  h.push(draftNotice);
+  h.push('<div style="display:flex;gap:12px;margin-bottom:8px;">');
+  h.push('<div style="flex:1"><label style="display:block;font-size:13px;opacity:.7;margin-bottom:2px">标题（YAML title）</label><input type="text" id="mtitle" value="' + escHtml(meta.title||'') + '" style="width:100%;font-size:13px;" oninput="updatePreviewFromMeta()" /></div>');
+  h.push('<div style="width:120px"><label style="display:block;font-size:13px;opacity:.7;margin-bottom:2px">布局（layout）</label><input type="text" id="mlayout" value="' + escHtml(meta.layout||'') + '" placeholder="default" style="width:100%;font-size:13px;" /></div>');
+  h.push('</div>');
   h.push('<div class="editor-wrap"><div class="editor-toolbar" id="modalToolbar"></div><div class="editor-panes">');
-  h.push('<textarea id="mcontent" oninput="previewMd()">' + escHtml(content||'') + '</textarea>');
+  h.push('<textarea id="mcontent" oninput="onModalEdit(\'' + path + '\')">' + escHtml(body||'') + '</textarea>');
   h.push('<div class="editor-preview" id="mdPreview"></div>');
   h.push('</div></div>');
-  h.push('<div class="btns" style="margin-top:8px">');
+  h.push('<div id="modal_stats" class="dim" style="text-align:right;font-size:12px;padding:4px 0;"></div>');
+  h.push('<div class="btns" style="margin-top:4px">');
   h.push('<button class="btn" onclick="saveModal()">💾 保存</button>');
-  h.push('<button class="btn btn-red" onclick="closeModal()">取消</button></div></div>');
+  h.push('<button class="btn" onclick="viewHistory(\'' + path + '\')">📜 历史</button>');
+  h.push('<button class="btn btn-red" onclick="closeModal()">取消</button></div>');
+  h.push('</div>');
   overlay.innerHTML = h.join('');
   document.body.appendChild(overlay);
+  overlay.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveModal(); }
+  });
   window._modalPath = path;
+  window._modalDraftPath = path;
   buildToolbar('modalToolbar', 'modal');
-  if (!window.marked) loadEditorLibs(function() { previewMd(); });
-  else setTimeout(previewMd, 100);
+  if (!window.marked) loadEditorLibs(function() { updateModalPreview(); });
+  else setTimeout(updateModalPreview, 100);
+  updateModalStats();
+}
+
+function onModalEdit(path) {
+  // Auto-save draft
+  var titleEl = document.getElementById('mtitle');
+  var layoutEl = document.getElementById('mlayout');
+  var bodyEl = document.getElementById('mcontent');
+  if (!bodyEl) return;
+  var full = buildFrontmatter(
+    { title: titleEl ? titleEl.value.trim() : '', layout: layoutEl ? layoutEl.value.trim() : '' },
+    bodyEl.value
+  );
+  saveDraft(path, full);
+  updateModalPreview();
+}
+
+window.discardDraft = function(path) {
+  clearDraft(path);
+  editFile(path); // Reload from server
+};
+
+function updateModalStats() {
+  updateEditorStats('modal');
+}
+
+function updateModalPreview() {
+  updateModalStats();
+  previewMd();
 }
 
 function buildToolbar(containerId, fnPrefix) {
@@ -650,7 +817,9 @@ function previewMd() {
   var preview = document.getElementById('mdPreview');
   if (!ta || !preview) return;
   if (!window.marked) { preview.innerHTML = '<p class="dim">加载渲染器...</p>'; return; }
-  var html = window.marked.parse(ta.value || '', { breaks: true });
+  // Strip frontmatter if present (safety net)
+  var text = (ta.value || '').replace(/^---[\s\S]*?---\s*/, '');
+  var html = window.marked.parse(text, { breaks: true });
   // Render LaTeX blocks
   if (window.katex) {
     html = html.replace(/\$\$([\s\S]*?)\$\$/g, function(_, m) {
@@ -665,16 +834,25 @@ function previewMd() {
 
 window.saveModal = function() {
   var path = document.getElementById('mpath').value.trim();
-  var content = document.getElementById('mcontent').value;
-  if (!path || !content) return;
+  var titleEl = document.getElementById('mtitle');
+  var layoutEl = document.getElementById('mlayout');
+  var contentEl = document.getElementById('mcontent');
+  var title = titleEl ? titleEl.value.trim() : '';
+  var layout = layoutEl ? layoutEl.value.trim() : 'default';
+  var body = contentEl ? contentEl.value : '';
+  if (!path) return;
+  // Reconstruct full content with frontmatter
+  var fullContent = buildFrontmatter({ title: title, layout: layout }, body);
+  // Clear draft before closing
+  clearDraft(window._modalDraftPath || path);
   closeModal();
   var main = document.getElementById('main');
   main.innerHTML = '<p>保存中...</p>';
 
-  var body = { message: 'update ' + path, content: b64enc(content), branch: BRANCH };
-  if (shaMap[path]) body.sha = shaMap[path];
+  var body2 = { message: 'update ' + path, content: b64enc(fullContent), branch: BRANCH };
+  if (shaMap[path]) body2.sha = shaMap[path];
 
-  gh('/repos/' + REPO + '/contents/' + path, { method: 'PUT', body: JSON.stringify(body) }).then(function(d) {
+  gh('/repos/' + REPO + '/contents/' + path, { method: 'PUT', body: JSON.stringify(body2) }).then(function(d) {
     if (d.content) { shaMap[path] = d.content.sha; loadList(); }
     else main.innerHTML = '<p class="red">保存失败: ' + (d.message||'unknown') + '</p>';
   });
@@ -685,7 +863,61 @@ window.closeModal = function() {
   if (el) el.remove();
 };
 
-// ── Quick Publish (render HTML immediately) ──
+// ── Git History Viewer ──
+window.viewHistory = function(path) {
+  var overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = '<div class="modal" style="width:800px;"><h3>📜 ' + escHtml(path) + ' 修改历史</h3><div id="historyContent"><p class="dim">加载中...</p></div><div class="btns" style="margin-top:12px"><button class="btn btn-red" onclick="closeModal()">关闭</button></div></div>';
+  document.body.appendChild(overlay);
+
+  gh('/repos/' + REPO + '/commits?path=' + encodeURIComponent(path) + '&per_page=15').then(function(commits) {
+    if (!Array.isArray(commits) || commits.length === 0) {
+      document.getElementById('historyContent').innerHTML = '<p class="dim">暂无提交记录</p>';
+      return;
+    }
+    var html = '<table><tr><th>时间</th><th>作者</th><th>提交信息</th><th>操作</th></tr>';
+    commits.forEach(function(c, i) {
+      var sha = c.sha ? c.sha.substring(0, 7) : '?';
+      var date = c.commit ? c.commit.author.date.substring(0, 19).replace('T', ' ') : '?';
+      var author = c.commit ? c.commit.author.name : '?';
+      var msg = c.commit ? c.commit.message.split('\n')[0] : '?';
+      var isLatest = i === 0;
+      html += '<tr>';
+      html += '<td style="white-space:nowrap;font-size:12px;">' + date + '</td>';
+      html += '<td style="font-size:12px;">' + escHtml(author) + '</td>';
+      html += '<td style="font-size:12px;">' + escHtml(msg) + '<br><code style="font-size:11px;">' + sha + '</code></td>';
+      html += '<td style="white-space:nowrap">';
+      if (!isLatest) html += '<button class="btn btn-sm" onclick="restoreVersion(\'' + path + '\',\'' + c.sha + '\',\'' + sha + '\')">↩ 恢复</button>';
+      else html += '<span class="dim" style="font-size:12px;">当前版本</span>';
+      html += '</td></tr>';
+    });
+    html += '</table>';
+    document.getElementById('historyContent').innerHTML = html;
+  }).catch(function(e) {
+    document.getElementById('historyContent').innerHTML = '<p class="red">加载失败: ' + (e.message||e) + '</p>';
+  });
+};
+
+window.restoreVersion = function(path, sha, shortSha) {
+  if (!confirm('确定恢复到 ' + shortSha + ' 版本？这将覆盖当前文件内容。')) return;
+  document.getElementById('historyContent').innerHTML = '<p>加载版本中...</p>';
+  gh('/repos/' + REPO + '/contents/' + encodeURIComponent(path) + '?ref=' + sha).then(function(meta) {
+    if (!meta || meta.message) { document.getElementById('historyContent').innerHTML = '<p class="red">获取失败: ' + (meta ? meta.message : '') + '</p>'; return; }
+    var raw = meta.content.replace(/\n/g, '');
+    var content = atob(raw);
+    try { content = decodeURIComponent(escape(content)); } catch(e) {}
+    // Put the old content into the current editor
+    closeModal(); // close history
+    showModal(path, content);
+    // Show a notice
+    setTimeout(function() {
+      var notice = document.querySelector('.warn');
+      if (notice) notice.innerHTML = '<b>📜 已加载 ' + shortSha + ' 版本</b> 保存后才会生效。';
+    }, 200);
+  }).catch(function(e) {
+    document.getElementById('historyContent').innerHTML = '<p class="red">加载失败: ' + e.message + '</p>';
+  });
+};
 window.quickPublish = function(path) {
   var main = document.getElementById('main');
   main.innerHTML = '<p>⚡ 渲染并发布 ' + path + '...</p>';
@@ -773,17 +1005,59 @@ window.delFile = function(path) {
   });
 };
 
+window.dupFile = function(path) {
+  var newName = prompt('复制为（输入新文件名，不含 .md）：', path.replace('.md','') + '-copy');
+  if (!newName) return;
+  var newPath = newName + (newName.endsWith('.md') ? '' : '.md');
+  document.getElementById('main').innerHTML = '<p>复制中...</p>';
+  ghRaw('/repos/' + REPO + '/contents/' + path + '?ref=' + BRANCH).then(function(content) {
+    gh('/repos/' + REPO + '/contents/' + newPath, {
+      method: 'PUT',
+      body: JSON.stringify({ message: 'copy ' + path + ' -> ' + newPath, content: b64enc(content), branch: BRANCH })
+    }).then(function(d) {
+      if (d.content) { shaMap[newPath] = d.content.sha; loadList(); }
+      else document.getElementById('main').innerHTML = '<p class="red">复制失败: ' + (d.message||'') + '</p>';
+    });
+  }).catch(function(e) {
+    document.getElementById('main').innerHTML = '<p class="red">读取源文件失败: ' + e.message + '</p>';
+  });
+};
+
 // ── New Page ──
+const PAGE_TEMPLATES = {
+  blank: { label: '空白页', content: '在这里写内容...\n\n---\n> 需要在顶部加上 YAML 头：\n> ```\n> ---\n> title: 页面标题\n> ---\n> ```' },
+  wiki: { label: '百科条目', content: '---\ntitle: 条目名称\n---\n\n# 条目名称\n\n## 概述\n\n在这里写概述...\n\n## 详细说明\n\n在这里写详细内容...\n\n## 相关条目\n\n- [相关条目1](/path)\n- [相关条目2](/path)\n\n## 参考资料\n\n- 参考链接' },
+  command: { label: '命令参考', content: '---\ntitle: 命令名称\n---\n\n# 命令名称\n\n## 语法\n\n```\n命令名 [参数...]\n```\n\n## 功能\n\n在这里描述命令功能...\n\n## 参数\n\n| 参数 | 说明 |\n|---|---|\n| 参数1 | 说明1 |\n| 参数2 | 说明2 |\n\n## 示例\n\n```\n命令名 参数1 参数2\n```\n\n## 提示\n\n使用提示...' },
+  hacknet: { label: 'Hacknet 页面', content: '---\ntitle: 页面标题\n---\n\n# 页面标题\n\n基于源码的分析说明。\n\n---\n\n## 核心功能\n\n功能描述...\n\n## 源码分析\n\n关键文件：\n\n```\n相关源码路径\n```\n\n## 使用示例\n\n示例说明...\n\n---\n\n> 引用来源或提示' },
+};
+
+function applyTemplate(name) {
+  var t = PAGE_TEMPLATES[name];
+  if (!t) return;
+  var ta = document.getElementById('ncontent');
+  if (ta) { ta.value = t.content; previewNew(); }
+}
+
 function loadNew() {
-  var defaultContent = '在这里写内容...\n\n---\n> 需要标题？在文件开头加上 YAML 头：\n> ```\n> ---\n> title: 页面标题\n> ---\n> ```';
+  var defaultContent = PAGE_TEMPLATES.blank.content;
+  var templOptions = '';
+  for (var k in PAGE_TEMPLATES) {
+    if (PAGE_TEMPLATES.hasOwnProperty(k)) {
+      templOptions += '<option value="' + k + '">' + PAGE_TEMPLATES[k].label + '</option>';
+    }
+  }
   var html = '<div class="page-bar"><h2>➕ 新建页面</h2></div>';
   html += '<label style="display:block;margin:8px 0 4px;opacity:.7">文件名 (不含 .md)</label>';
-  html += '<input type="text" id="npath" placeholder="my-page" />';
-  html += '<div class="editor-wrap" style="margin-top:8px"><div class="editor-toolbar" id="newToolbar"></div>';
+  html += '<input type="text" id="npath" placeholder="my-page" style="width:100%;margin-bottom:8px;" />';
+  html += '<label style="display:block;margin:4px 0;opacity:.7">模板</label>';
+  html += '<select id="ntemplate" onchange="applyTemplate(this.value)" style="width:100%;margin-bottom:8px;' +
+    'font:14px Consolas,monospace;background:#111;border:1px solid #2a2a3a;color:#fff;padding:8px 10px;">' + templOptions + '</select>';
+  html += '<div class="editor-wrap"><div class="editor-toolbar" id="newToolbar"></div>';
   html += '<div class="editor-panes">';
   html += '<textarea id="ncontent" oninput="previewNew()">' + escHtml(defaultContent) + '</textarea>';
   html += '<div class="editor-preview" id="newPreview"></div></div></div>';
-  html += '<div style="margin-top:12px"><button class="btn" onclick="createPage()">创建页面</button></div>';
+  html += '<div id="new_stats" class="dim" style="text-align:right;font-size:12px;padding:4px 0;"></div>';
+  html += '<div style="margin-top:8px"><button class="btn" onclick="createPage()">创建页面</button></div>';
   document.getElementById('main').innerHTML = html;
   buildToolbar('newToolbar', 'new');
   loadEditorLibs(function() { previewNew(); });
@@ -794,7 +1068,8 @@ function previewNew() {
   var preview = document.getElementById('newPreview');
   if (!ta || !preview) return;
   if (!window.marked) { preview.innerHTML = '<p class="dim">加载渲染器...</p>'; return; }
-  var html = window.marked.parse(ta.value || '', { breaks: true });
+  var text = (ta.value || '').replace(/^---[\s\S]*?---\s*/, '');
+  var html = window.marked.parse(text, { breaks: true });
   if (window.katex) {
     html = html.replace(/\$\$([\s\S]*?)\$\$/g, function(_, m) {
       try { return '<div style="text-align:center;padding:8px 0">' + katex.renderToString(m.trim(), {displayMode:true,throwOnError:false}) + '</div>'; } catch(e) { return '<div class="red">❌ ' + escHtml(m) + '</div>'; }
@@ -804,6 +1079,7 @@ function previewNew() {
     });
   }
   preview.innerHTML = html;
+  updateEditorStats('new');
 }
 
 window.createPage = function() {
@@ -1118,9 +1394,158 @@ window.saveNavbar = function() {
   });
 };
 
+// ── Pages Build Management ──
+function loadPagesBuild() {
+  var main = document.getElementById('main');
+  main.innerHTML = '<p>加载中...</p>';
+  Promise.all([
+    gh('/repos/' + REPO + '/pages').catch(function() { return null; }),
+    gh('/repos/' + REPO + '/pages/builds?per_page=5').catch(function() { return []; })
+  ]).then(function(results) {
+    var info = results[0];
+    var builds = results[1] || [];
+    var html = '<div class="page-bar"><h2>🚀 Pages 构建</h2><button class="btn" onclick="triggerPagesBuild()" id="buildBtn">▶ 触发重建</button></div>';
+
+    // Current status
+    if (info && !info.message) {
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px;">';
+      var statusColor = info.status === 'built' ? '#00d4aa' : (info.status === 'building' ? '#f39c12' : '#e74c3c');
+      html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;"><div style="font-size:14px;color:' + statusColor + ';font-weight:bold">' + (info.status || 'unknown') + '</div><div class="dim">当前状态</div></div>';
+      html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;"><div style="font-size:14px;color:#00d4aa">' + (info.cname || '-') + '</div><div class="dim">自定义域名</div></div>';
+      html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;"><div style="font-size:14px">' + (info.https_certificate ? '✅ 已启用' : '❌ 未配置') + '</div><div class="dim">HTTPS</div></div>';
+      html += '</div>';
+    } else {
+      html += '<div class="warn"><b>⚠</b> 无法获取 Pages 信息（token 可能需要 pages 权限）</div>';
+    }
+
+    // Build history
+    if (Array.isArray(builds) && builds.length > 0) {
+      html += '<b>构建历史</b><table><tr><th>状态</th><th>触发</th><th>时间</th><th>提交</th></tr>';
+      builds.forEach(function(b) {
+        var status = b.status || '?';
+        var statusCls = status === 'built' ? 'green' : (status === 'building' ? 'dim' : 'red');
+        var actor = b.actor ? b.actor.login : '?';
+        var date = b.updated_at ? b.updated_at.substring(0, 19).replace('T', ' ') : '?';
+        var commit = b.commit ? b.commit.substring(0, 7) : '?';
+        html += '<tr><td class="' + statusCls + '">' + status + '</td><td>' + escHtml(actor) + '</td><td style="white-space:nowrap">' + date + '</td><td><code>' + commit + '</code></td></tr>';
+      });
+      html += '</table>';
+    } else {
+      html += '<p class="dim">暂无构建记录</p>';
+    }
+
+    html += '<div id="buildResult" class="dim" style="margin-top:8px"></div>';
+    main.innerHTML = html;
+  }).catch(function(e) {
+    main.innerHTML = '<p class="red">加载失败: ' + (e.message||e) + '</p>';
+  });
+}
+
+window.triggerPagesBuild = function() {
+  var btn = document.getElementById('buildBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 构建中...'; }
+  var result = document.getElementById('buildResult');
+  if (result) result.textContent = '⏫ 触发 Pages 构建...';
+  gh('/repos/' + REPO + '/pages/builds', { method: 'POST' }).then(function(d) {
+    if (d && !d.message) {
+      if (result) result.innerHTML = '<span class="green">✅ 构建已触发！</span> 约 30 秒后完成。';
+      setTimeout(loadPagesBuild, 2000);
+    } else {
+      if (result) result.innerHTML = '<span class="red">❌ 触发失败: ' + (d.message||'') + '</span>';
+      if (btn) { btn.disabled = false; btn.textContent = '▶ 触发重建'; }
+    }
+  }).catch(function(e) {
+    if (result) result.innerHTML = '<span class="red">❌ 请求失败: ' + e.message + '</span>';
+    if (btn) { btn.disabled = false; btn.textContent = '▶ 触发重建'; }
+  });
+};
+
 function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+// ── Theme Switcher ──
+function toggleTheme() {
+  var current = localStorage.getItem('csel_theme') || 'dark';
+  var next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('csel_theme', next);
+  applyTheme(next);
+  render(); // Re-render sidebar to update toggle text
+}
+
+function applyTheme(theme) {
+  if (theme === 'light') document.body.classList.add('theme-light');
+  else document.body.classList.remove('theme-light');
+}
+
+// ── Sitemap Generator ──
+function loadSitemap() {
+  var main = document.getElementById('main');
+  main.innerHTML = '<p>加载中...</p>';
+  gh('/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1').then(function(data) {
+    if (data.message) { main.innerHTML = '<p class="red">' + data.message + '</p>'; return; }
+    var pages = data.tree.filter(function(f) { return f.path.endsWith('.md') && f.path !== 'README.md' && f.path !== 'test.md'; });
+    var html = '<div class="page-bar"><h2>🗺 站点地图</h2><button class="btn" onclick="generateSitemap()" id="sitemapBtn">📄 生成 sitemap.xml</button></div>';
+    html += '<p class="dim">扫描到 ' + pages.length + ' 个页面，点击按钮生成 sitemap.xml 并提交到仓库。</p>';
+    html += '<table><tr><th>页面</th><th>URL</th></tr>';
+    var siteUrl = 'https://hn.liuxiyu.cn';
+    pages.forEach(function(f) {
+      var urlPath = '/' + f.path.replace('.md', '');
+      html += '<tr><td>' + escHtml(f.path) + '</td><td><a href="' + siteUrl + urlPath + '" target="_blank" class="dim">' + siteUrl + urlPath + '</a></td></tr>';
+    });
+    html += '</table>';
+    html += '<div id="sitemapResult" class="dim" style="margin-top:8px"></div>';
+    main.innerHTML = html;
+  }).catch(function(e) {
+    main.innerHTML = '<p class="red">加载失败: ' + (e.message||e) + '</p>';
+  });
+}
+
+window.generateSitemap = function() {
+  var btn = document.getElementById('sitemapBtn');
+  if (btn) btn.disabled = true;
+  var result = document.getElementById('sitemapResult');
+  if (result) result.textContent = '⏫ 扫描页面并生成...';
+  gh('/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1').then(function(data) {
+    if (data.message) { if (result) result.innerHTML = '<span class="red">' + data.message + '</span>'; if (btn) btn.disabled = false; return; }
+    var pages = data.tree.filter(function(f) { return f.path.endsWith('.md') && f.path !== 'README.md' && f.path !== 'test.md'; });
+    var siteUrl = 'https://hn.liuxiyu.cn';
+    var now = new Date().toISOString().split('T')[0];
+    var xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+    // Home page
+    xml += '  <url><loc>' + siteUrl + '/</loc><priority>1.0</priority><lastmod>' + now + '</lastmod></url>\n';
+    pages.forEach(function(f) {
+      var urlPath = '/' + f.path.replace('.md', '');
+      var priority = f.path.startsWith('hacknet/') ? '0.7' : '0.8';
+      xml += '  <url><loc>' + siteUrl + urlPath + '</loc><priority>' + priority + '</priority><lastmod>' + now + '</lastmod></url>\n';
+    });
+    xml += '</urlset>\n';
+
+    if (result) result.textContent = '⏫ 提交 sitemap.xml...';
+    gh('/repos/' + REPO + '/contents/sitemap.xml', { method: 'PUT', body: JSON.stringify({
+      message: 'update sitemap.xml',
+      content: b64enc(xml),
+      sha: shaMap['sitemap.xml'] || undefined,
+      branch: BRANCH
+    })}).then(function(d) {
+      if (d && d.content) {
+        shaMap['sitemap.xml'] = d.content.sha;
+        if (result) result.innerHTML = '<span class="green">✅ sitemap.xml 已提交！</span> <a href="/sitemap.xml" target="_blank">查看</a>';
+        // Trigger Pages rebuild
+        gh('/repos/' + REPO + '/pages/builds', { method: 'POST' }).catch(function() {});
+      } else {
+        if (result) result.innerHTML = '<span class="red">❌ 提交失败: ' + (d ? d.message : 'unknown') + '</span>';
+      }
+      if (btn) btn.disabled = false;
+    });
+  }).catch(function(e) {
+    if (result) result.innerHTML = '<span class="red">❌ 错误: ' + e.message + '</span>';
+    if (btn) btn.disabled = false;
+  });
+};
+
 // ── Init ──
+// Apply saved theme
+applyTheme(localStorage.getItem('csel_theme') || 'dark');
 var savedSession = localStorage.getItem('csel_session');
 if (savedSession) {
   try {
