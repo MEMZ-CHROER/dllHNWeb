@@ -287,7 +287,7 @@ function loadDashboard() {
   main.innerHTML = '<p>加载中...</p>';
   Promise.all([
     gh('/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1'),
-    gh('/repos/' + REPO + '/commits?per_page=5').catch(function() { return []; })
+    gh('/repos/' + REPO + '/commits?per_page=10').catch(function() { return []; })
   ]).then(function(results) {
     var data = results[0];
     var commits = results[1] || [];
@@ -1400,7 +1400,7 @@ function loadPagesBuild() {
   main.innerHTML = '<p>加载中...</p>';
   Promise.all([
     gh('/repos/' + REPO + '/pages').catch(function() { return null; }),
-    gh('/repos/' + REPO + '/pages/builds?per_page=5').catch(function() { return []; })
+    gh('/repos/' + REPO + '/pages/builds?per_page=100').catch(function() { return []; })
   ]).then(function(results) {
     var info = results[0];
     var builds = results[1] || [];
@@ -1412,7 +1412,12 @@ function loadPagesBuild() {
       var statusColor = info.status === 'built' ? '#00d4aa' : (info.status === 'building' ? '#f39c12' : '#e74c3c');
       html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;"><div style="font-size:14px;color:' + statusColor + ';font-weight:bold">' + (info.status || 'unknown') + '</div><div class="dim">当前状态</div></div>';
       html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;"><div style="font-size:14px;color:#00d4aa">' + (info.cname || '-') + '</div><div class="dim">自定义域名</div></div>';
-      html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;"><div style="font-size:14px">' + (info.https_certificate ? '✅ 已启用' : '❌ 未配置') + '</div><div class="dim">HTTPS</div></div>';
+      var httpsStatus = info.https_certificate ? '✅ 已启用' : '❌ 未配置';
+      var httpsEnforced = info.https_enforced ? '✅ 已强制' : '❌ 未强制';
+      var httpsForceBtn = info.https_certificate && !info.https_enforced
+        ? '<button class="btn btn-sm" onclick="enforceHTTPS()" style="margin-left:8px">🔒 启用强制 HTTPS</button>'
+        : '';
+      html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;"><div style="font-size:14px">' + httpsStatus + ' · ' + httpsEnforced + httpsForceBtn + '</div><div class="dim">HTTPS</div></div>';
       html += '</div>';
     } else {
       html += '<div class="warn"><b>⚠</b> 无法获取 Pages 信息（token 可能需要 pages 权限）</div>';
@@ -1457,6 +1462,27 @@ window.triggerPagesBuild = function() {
   }).catch(function(e) {
     if (result) result.innerHTML = '<span class="red">❌ 请求失败: ' + e.message + '</span>';
     if (btn) { btn.disabled = false; btn.textContent = '▶ 触发重建'; }
+  });
+};
+
+window.enforceHTTPS = function() {
+  var result = document.getElementById('buildResult');
+  if (result) result.textContent = '🔒 启用 HTTPS 强制...';
+  gh('/repos/' + REPO + '/pages', { method: 'PUT', body: JSON.stringify({
+    cname: 'hn.liuxiyu.cn',
+    https_enforced: true,
+    branch: 'master'
+  })}).then(function(d) {
+    if (d && !d.message) {
+      if (result) result.innerHTML = '<span class="green">✅ HTTPS 强制已启用！</span> 触发 Pages 重建...';
+      gh('/repos/' + REPO + '/pages/builds', { method: 'POST' }).then(function() {
+        setTimeout(loadPagesBuild, 2000);
+      }).catch(function() { loadPagesBuild(); });
+    } else {
+      if (result) result.innerHTML = '<span class="red">❌ 启用失败: ' + (d ? d.message : 'unknown') + '</span>';
+    }
+  }).catch(function(e) {
+    if (result) result.innerHTML = '<span class="red">❌ 请求失败: ' + e.message + '</span>';
   });
 };
 
