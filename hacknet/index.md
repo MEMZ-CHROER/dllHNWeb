@@ -28,6 +28,9 @@ Bit、CSEC、Entropy 等人物与组织档案，附剧情时间线。
 ### [🛠 模组开发指南](/hacknet/mods)
 用 BepInEx + Harmony 给 Hacknet 写模组。
 
+### [⚡ 快速模组教程](/hacknet/mod-tutorial)
+仿照 CSEL Mod，从复制改到自己写最小插件，三步上手。
+
 ### [📜 主线剧情](/hacknet/story)
 从 Bit 的第一封邮件到最终结局的完整故事线。
 
