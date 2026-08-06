@@ -30,3 +30,12 @@ Bit、CSEC、Entropy 等人物与组织档案，附剧情时间线。
 
 ### [📜 主线剧情](/hacknet/story)
 从 Bit 的第一封邮件到最终结局的完整故事线。
+
+### [🏆 成就列表](/hacknet/achievements)
+基础游戏全部 12 个成就与触发条件。
+
+### [🥚 游戏彩蛋](/hacknet/easter-eggs)
+The Gibson、Naix 主题仓库、音乐致敬、开发者出镜等彩蛋合集。
+
+### [🎵 音乐与音效](/hacknet/music)
+基础游戏与 DLC 的曲目清单（含 HOME - Resonance、Roller Mobster 等授权曲）。
