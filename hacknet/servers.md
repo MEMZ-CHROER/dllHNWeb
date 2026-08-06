@@ -133,6 +133,118 @@ Hacknet 主线相关服务器的真实数据速查。数据提取自游戏 Conte
 
 ---
 
+## 🎮 DLC（Labyrinths）服务器
+
+> DLC 专属服务器数据，提取自 Steam 版 Content/DLC。`Bibliotheque` Hub 上三名 agent 的登录密码见下表。
+
+### Bibliotheque（图书馆）
+
+| 服务器 | IP | 安全等级 | 密码 |
+|---|---|---|---|
+| Bibliotheque（Hub） | `69.58.186.114` | 6 | agent：Coel=`colamaeleon`、Kaguya=`dj820mmaCb`、D3f4ult=`kanzaz` |
+| Bibliotheque DropServer | `69.58.186.118` | 6 | `ka2gs69` |
+| Bibliotheque Ghost Storage | 动态 | 10 | — |
+
+### Kaguya 试炼
+
+| 服务器 | IP | 安全等级 | 密码 |
+|---|---|---|---|
+| Kaguya Sprint Trial | `74.125.23.121` | 4 | — |
+| Kaguya Push Trial | `216.239.32.181` | 1 | — |
+
+### Striker 线
+
+| 服务器 | IP | 安全等级 | 密码 |
+|---|---|---|---|
+| Striker_Battlestation | `72.60.4.119` | 3 | — |
+| Striker Proxy | `72.52.4.119` | 6 | — |
+| Striker Cache | `72.52.4.117` | 3 | — |
+
+### Pacific Air / ATC（空航线）
+
+| 服务器 | IP | 安全等级 | 密码 |
+|---|---|---|---|
+| PacificAir_BookingsMainframe | 动态 | 5 | — |
+| PacificAir_Mail | 动态 | 5 | — |
+| PacificAir_Network_Hub | 动态 | 5 | — |
+| PacificAir_Whitelist_Authenticator | 动态 | 5 | — |
+| LAX_Pacific_Server | 动态 | 5 | — |
+| Psylance Cyber Security_Employee IRC | `50.31.225.93` | 5 | — |
+| Pacific_ATC_RoutingHub | 动态 | 5 | — |
+| Pacific_ATC_Skylink | `208.91.196.94` | 5 | — |
+| Pacific_ATC_WhitelistAuthenticator | 动态 | 5 | — |
+| PA_747_0022 Flight Computer | `209.15.13.134` | 5 | — |
+| PA_747_0018 Flight Computer | `208.73.211.70` | 5 | — |
+
+### Memory Forensics（内存取证）
+
+| 服务器 | IP | 安全等级 | 密码 |
+|---|---|---|---|
+| Lihota Productions | `17.5.3.9` | 2 | `4TL4S` |
+| Snackintosh_Proxy | `185.160.171.69` | 2 | `4TL4S` |
+| Snackintosh_PASSTHRU | `167.72.73.56` | 2 | `4TL4S` |
+| iodependency~Atlas | `88.29.144.6` | 3 | `4TL4S` |
+| Raven Dataworks | `208.73.49.146` | 2 | — |
+| Petunia Verres' Powerbook | `185.160.171.69` | 3 | — |
+| WIP MemForensics Target 'Franklin' | `75.126.102.233` | 3 | — |
+
+### Neopals（数字宠物）
+
+| 服务器 | IP | 安全等级 | 密码 |
+|---|---|---|---|
+| Neopals_Mainframe | 动态 | 8 | `n8u5v432kj` |
+| Neopals_Authentication | 动态 | 8 | `mlk3fsdie321` |
+| Neopals_VersionControl | 动态 | 5 | `undc321b9y` |
+| Neopals Homepage | 动态 | 1 | — |
+| Thomas_Office | `104.95.129.117` | 3 | — |
+| Ash-ALIENGEAR13 | `54.192.234.65` | 2 | — |
+| Tiff Doehan_PersonalPowerbook | `98.129.229.204` | 2 | — |
+
+### Hermetic Alchemists（炼金术士）
+
+| 服务器 | IP | 安全等级 | 密码 |
+|---|---|---|---|
+| School of the Hermetic Alchemists | 动态 | 4 | — |
+| HA_Coagula | 动态 | 4 | — |
+| HA_Solve | 动态 | 4 | — |
+| HA_Rebis | `66.96.149.16` | 4 | — |
+| Nate Wesson Home | `66.175.58.9` | 4 | — |
+| Nate Wesson_STOR-DRIVE(tm) | `66.175.58.11` | 1 | — |
+
+### Injections / 终局
+
+| 服务器 | IP | 安全等级 | 密码 |
+|---|---|---|---|
+| Coel__Gateway | `208.73.210.214` | 4 | `colamaeleon` |
+| Psylance Internal Services | 动态 | 4 | `catsarebestpet` |
+| Psylance Internal Archives | 动态 | 4 | `faithless` |
+| Pellium Box（Naix 主题彩蛋） | `69.172.201.153` | 4 | — |
+| The Gibson（💀 终极挑战） | 动态 | **99** | — |
+| Kaguya_Gateway | `54.183.231.31` | 4 | — |
+| Kaguya_Projects | `54.183.231.34` | 4 | — |
+| Labyrinths_DevChat | `54.192.133.33` | 4 | — |
+
+### 支线（Set 3 / 4）
+
+| 服务器 | IP | 安全等级 | 密码 |
+|---|---|---|---|
+| Ricer PC | 动态 | 1 | — |
+| r00t_Tek Battlestation | 动态 | 4 | — |
+| L. Shaffer's NetBook | 动态 | 2 | — |
+| MagmaMailbox | `26.26.62.62` | 1 | — |
+| TortillaVPS | `7.201.4.178` | 1 | — |
+| cornch1p home pc | `177.3.200.6` | 1 | — |
+| Funkenstein's Laboratory | `21.32.43.54` | 1 | `redwood` |
+| Funkenstein's Basement | `32.43.54.65` | 1 | — |
+| SecurityCoNnEXION Web Portal | 动态 | 1 | — |
+| Howard Grave's personal computer | 动态 | 1 | — |
+| ClickLab Productions | 动态 | 1 | — |
+| Merry Hill Cafe Router | `198.216.105.54` | 1 | — |
+| Manananggal_workbook | `244.188.232.231` | 1 | — |
+| Asdis Dagrunsdottir's Laptop | `198.150.137.83` | 1 | — |
+
+---
+
 ## 💡 小贴士
 
 1. **密码复用**：Entropy / EnTech 多台服务器复用同一管理员密码（如 `ax889msjA`、`ithoughtyouweremakingtea`），破解一台往往能顺带解锁其他。

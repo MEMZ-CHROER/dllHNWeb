@@ -221,7 +221,70 @@ CSEC 任务板刷到后期，**V** 开始向你发布 **bit 系列**任务（"bi
 
 ## 可选 · Labyrinths DLC
 
-在 Entropy 与 CSEC 阶段之间，可选择参加 **Labyrinths DLC** 的试炼及其任务——一条独立的剧情线，涉及坠机事件调查与独立角色（如 Striker）。不打也不影响主线通关。
+在 Entropy 与 CSEC 阶段之间，可选择参加 **Labyrinths DLC** 的试炼及其任务——一条独立的剧情线。不打也不影响主线通关。
+
+### D1 · Kaguya 试炼 → 加入 Bibliotheque
+
+DLC 开头，你要通过 **Kaguya 的试炼**（`#ALERT# - The Kaguya Trials`）：
+
+| 试炼 | IP | 安全等级 |
+|---|---|---|
+| Kaguya Sprint Trial | `74.125.23.121` | 4 |
+| Kaguya Push Trial | `216.239.32.181` | 1 |
+
+> "Hey! Nice work - you're the third one through. I'm connecting you to our home base now, hold on."
+
+通过后加入黑客团队 **Bibliotheque（图书馆）**。Hub 服务器（`69.58.186.114`，sec=6）用 DHS 任务板发任务，成员三人：
+
+- **Kaguya** — 团队领导，负责管理、侦察
+- **D3f4ult** — 解密 / SSL / 木马专家
+- **Coel** — 成员
+
+> 💡 Bibliotheque 的三名 agent 在 Hub 上的登录密码：`colamaeleon`（Coel）、`dj820mmaCb`（Kaguya）、`kanzaz`（D3f4ult）。Drop 服务器 `69.58.186.118`（sec=6）密码 `ka2gs69`。
+
+### D2 · 初入团队（Set 1~2）
+
+- **The Ricer** — 破解 Ricer PC（sec=1），给改装车玩家的电脑"上点颜色"
+- **Build Decryption Tools** — **Crypsis**（另一个组织）委托 D3f4ult 做解密工具
+- **DDOSer / Trace Grindcraft server outages** — 处理 DDoS 攻击者 r00t_Tek 的服务器
+
+### D3 · Striker 的报复
+
+你接的任务目标之一是 **Striker**（`Striker_Battlestation` `72.60.4.119` sec=3、`Striker Proxy` `72.52.4.119` sec=6、`Striker Cache` `72.52.4.117` sec=3）。删掉他的大学作业后，他气炸了：
+
+> "It was you, wasn't it? You broke in and deleted my uni work. Well, ya know what? Fuck you. FUCK YOU. ... To conclude: Fuck you. Love, StrikeR"
+
+**但报复还没完**——Striker 从攻击转为反攻，你发现自己的 PC 也遭到了 **VM 级攻击**（"@#PLAYERNAME# is setting off warnings all over the place"）。Coel 紧急介入帮你调查，D3f4ult 负责追踪来源。这段剧情呼应主线里"清日志"的教训：你留下的日志又成了破绽。
+
+### D4 · Take Flight（Pacific Air 空航线）
+
+**PacificAir 航空公司**的服务器全套 sec=5（Bookings Mainframe、Mail、Network Hub、Whitelist Authenticator）。团队分工协作：
+
+- 白名单服务器挡路 → 团队配合拉闸几秒 → 趁机进入 Bookings Mainframe
+- **Psylance**（Psylance Cyber Security，一家安全公司）正调查这些飞机相关系统
+- **Coel - Nisei MK III**：调查中发现了 **Nisei MK III** ——一种危险物质/技术的实验报告
+
+> 👤 **Anon**（匿名者）：他后来在一架飞机上发现了你留下的日志，主动帮你清掉，并顺藤摸瓜查出 **Nisei MK III** 的来龙去脉（"I'm guessing you and your group are why I can't find any actual files on how to produce it"）。他在暗处帮了你一把。
+
+### D5 · 坠机危机（Airline 2 / Finale）★DLC 结局
+
+针对 **Pacific ATC**（航空管制）系统的深入渗透（`Pacific_ATC_RoutingHub`、`Pacific_ATC_Skylink` `208.91.196.94`、`WhitelistAuthenticator`），最终目标是两架航班：
+
+- **PA_747_0022 Flight Computer** `209.15.13.134`（sec=5）
+- **PA_747_0018 Flight Computer** `208.73.211.70`（sec=5）
+
+**终局反转**：在危机解决的关键时刻，**Coel 背叛了团队**——她试图关掉 Bibliotheque 的频道、踢掉 D3f4ult 的网关（`*** CHANNEL mode set: +b (ban) for user @Coel`、"Looks like Coel was trying to shut us down"）。
+
+最后的收尾在 **Kaguya_Gateway**（`54.183.231.31`）、**Kaguya_Projects**（`54.183.231.34`）、**Labyrinths_DevChat**（`54.192.133.33`）：你们要确保敌人不会再发动攻击——清掉他们的 `/bin` 和 `/sys`（"I'll take care of D3f4ult, you get Kaguya"）。
+
+### D6 · 其他内容
+
+- **Memory Forensics（内存取证）**：MemForensics 系列任务（1/3 ~ 3/3），用内存取证工具分析服务器；涉及 `Lihota Productions`（`17.5.3.9`，密码 `4TL4S`）、`Snackintosh`（`185.160.171.69`，同密码）、`iodependency~Atlas`（`88.29.144.6`）、`Raven Dataworks`（`208.73.49.146`）等
+- **Neopals**：数字宠物公司（主服务器 sec=8，密码 `n8u5v432kj`；认证服务器 sec=8，密码 `mlk3fsdie321`；版本控制 sec=5，密码 `undc321b9y`）
+- **Hermetic Alchemists（炼金术士）**：一个神秘的炼金术组织（`School of the Hermetic Alchemists`，HA_Coagula/Solve/Rebis，`66.96.149.16`；管理员 Nate Wesson 的服务器密码见速查表）
+- **The Gibson**（💀 终极彩蛋）：安全等级 **99**、双管理员 + 超级管理员、trace 95s、firewall 6、proxy 5s 的怪物服务器。破解成功者会被记入 **Victors.txt**（历代通关玩家榜）
+- **Pellium Box**（`69.172.201.153`，Naix 彩蛋）：一台藏着 **Naix 主题文件**的服务器（`x-server_Green.sys`、`x-server_RiptideStandard.sys`、`x-server_StarfieldClassic.sys`、`sys/x-server.sys`）——和主线里 Naix 的 x-server.sys 系统联动，IP 与主线 SecuLock（`69.172.201.208`）同网段
+- **PointClicker 2**、**It Follows**、**Cleanup**、**Expo**、**Keebs**、**Bean Stalk** 等支线任务
 
 ---
 
