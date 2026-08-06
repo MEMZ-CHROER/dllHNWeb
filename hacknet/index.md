@@ -4,7 +4,7 @@ title: Hacknet 百科
 
 # Hacknet 百科
 
-Hacknet 是一款终端模拟黑客游戏。本页面整理了基于 OpenHacknet 源码的游戏机制、命令、剧情等全方位信息。
+Hacknet 是一款终端模拟黑客游戏。本页面整理了基于 Hacknet 游戏数据的机制、命令、剧情等全方位信息。
 
 ---
 

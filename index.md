@@ -12,7 +12,7 @@ Hacknet 模组生态 · 从 Fork 到独立
 ## 项目一览
 
 ### [CSEL Mod](csel-mod)
-CSEL Extension — 同时兼容原版 Hacknet 和 OpenHacknet 的 BepInEx 插件。  
+CSEL Extension — 同时兼容原版 Hacknet 和开源版的 BepInEx 插件。  
 提供 crackall、find、clog、pscan 等实用命令。
 
 ## 📖 Hacknet 游戏百科
