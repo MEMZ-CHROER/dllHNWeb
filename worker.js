@@ -270,7 +270,7 @@ export default {
     // ═══════════════════════════════════════════════
     if (path === '/sitemap.xml' && request.method === 'GET') {
       const cache = caches.default;
-      const cacheKey = new Request('https://sitemap-cache/dllhn-sitemap', request);
+      const cacheKey = new Request('https://sitemap-cache/site-sitemap', request);
       let cached = await cache.match(cacheKey);
       if (cached) return cached;
       const treeUrl = GH_API + '/repos/MEMZ-CHROER/dllHNWeb/git/trees/master?recursive=1';

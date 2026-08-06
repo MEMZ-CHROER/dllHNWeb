@@ -18,8 +18,6 @@ jekyll serve
 
 ```
 ├─ index.md              主页
-├─ dllhn.md              DllHN 介绍
-├─ csel-standalone.md    CSEL 独立版
 ├─ csel-mod.md           CSEL Mod
 ├─ _config.yml           Jekyll 配置
 ├─ _layouts/default.html 页面模板
