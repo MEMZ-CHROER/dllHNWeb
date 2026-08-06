@@ -1,12 +1,9 @@
 ---
-layout: default
 title: 首页
+layout: default
 ---
 
-# DllHN / CSEL
-
-Hacknet 模组生态 · 从 Fork 到独立
-
+# CSEL
 ---
 
 ## 项目一览
