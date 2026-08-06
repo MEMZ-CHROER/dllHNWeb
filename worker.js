@@ -353,13 +353,14 @@ export default {
 
     var originUrl = SITE_ORIGIN + path;
     var cache = caches.default;
-    var cacheKey = new Request(originUrl, request);
+    // 缓存 key 包含 query，方便用 ?t=xxx 绕过缓存验证；页面更新后 60 秒内自动生效
+    var cacheKey = new Request(originUrl + url.search, request);
     var cached = await cache.match(cacheKey);
     if (cached) return cached;
     var originRes = await fetch(originUrl, { headers: { "User-Agent": "CSEL-Worker" } });
     var res = new Response(originRes.body, originRes);
     if (originRes.ok) {
-      res.headers.set("Cache-Control", "public, max-age=300");
+      res.headers.set("Cache-Control", "public, max-age=60");
       ctx.waitUntil(cache.put(cacheKey, res.clone()));
     }
     return res;
