@@ -96,7 +96,7 @@ V 系列（bit:初章 ~ bit:阻止）
 
 在 Naix 的 **"gg wp"** 邮件上**回复任意脏话**（比如 `fuck`），向 Naix 表明态度。
 
-- 触发 Naix 的"rude response"剧情（对应成就 `rudeNaixResponse`）
+- 触发 Naix 的"rude response"剧情（对应成就 `rude_response`，源码 trigger 名为 `rudeNaixResponse`）
 - 你继续留在 Entropy 阵营，完成 **Entropy 的剩余任务**
 - 属于相对"顺走"的路线，不深挖 Naix 那条支线
 
