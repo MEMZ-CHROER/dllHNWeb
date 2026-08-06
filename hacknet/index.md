@@ -31,6 +31,9 @@ Bit、CSEC、Entropy 等人物与组织档案，附剧情时间线。
 ### [⚡ 快速模组教程](/hacknet/mod-tutorial)
 仿照 CSEL Mod，从复制改到自己写最小插件，三步上手。
 
+### [📦 Mod 推荐安装指南](/hacknet/mod-install)
+BepInEx 安装、Pathfinder 框架、实用 Mod 清单与排障速查。
+
 ### [📜 主线剧情](/hacknet/story)
 从 Bit 的第一封邮件到最终结局的完整故事线。
 
