@@ -4,15 +4,15 @@ title: 模组开发指南
 
 # Hacknet 模组开发指南
 
-本指南教你为 Hacknet / OpenHacknet 编写 BepInEx 插件模组。所有机制均基于 OpenHacknet 源码中的实际加载方式（`ExtensionLoader.cs` + Harmony）。
+本指南教你为 Hacknet 编写 BepInEx 插件模组。所有机制均基于游戏源码中的实际加载方式（`ExtensionLoader.cs` + Harmony）。
 
-> 实战参考：本站的 [CSEL Mod](/csel-mod/) 就是一个完整的 BepInEx 插件，同时兼容原版 Hacknet 和 OpenHacknet。
+> 实战参考：本站的 [CSEL Mod](/csel-mod/) 就是一个完整的 BepInEx 插件，同时兼容原版 Hacknet 和开源版。
 
 ---
 
 ## 1. 两种模组方式
 
-OpenHacknet 支持两种扩展途径：
+Hacknet 支持两种扩展途径：
 
 | 方式 | 说明 | 适用 |
 |---|---|---|
@@ -26,7 +26,7 @@ OpenHacknet 支持两种扩展途径：
 ## 2. 环境准备
 
 ```text
-OpenHacknet 根目录/
+Hacknet 根目录/
 ├─ BepInEx/
 │  ├─ core/        ← BepInEx 运行时（Hacknet 已内置）
 │  ├─ config/
@@ -73,7 +73,7 @@ public class MyMod : BaseUnityPlugin
 
 ## 4. Harmony 补丁：核心机制
 
-OpenHacknet 的 `ExtensionLoader` 会遍历你程序集里所有标了 **`[HarmonyPatch]`** 的类并自动应用。这是 CSEL Mod 的做法，也是官方源码支持的加载方式。
+Hacknet 的 `ExtensionLoader` 会遍历你程序集里所有标了 **`[HarmonyPatch]`** 的类并自动应用。这是 CSEL Mod 的做法，也是官方源码支持的加载方式。
 
 ### 拦截一条游戏命令
 
@@ -158,9 +158,8 @@ public static class ExtensionLoader
 ## 7. 编译与安装
 
 ```bash
-# 编译（以 CSEL Mod 为例，支持双平台切换）
-dotnet build -p:OpenHacknet=true    # OpenHacknet 版
-dotnet build -p:OpenHacknet=false   # 原版 Hacknet 版
+# 编译（以 CSEL Mod 为例，双平台构建脚本见 csel-mod 页面）
+dotnet build
 ```
 
 把产出的 `MyMod.dll` 丢进：
@@ -179,7 +178,7 @@ BepInEx/plugins/MyMod.dll
 |---|---|
 | 插件没加载 | 确认 GUID 唯一、DLL 在 `plugins/` 下、没缺 BepInEx 引用 |
 | 命令没生效 | 检查 `Prefix` 里参数名/类型是否和原方法签名一致 |
-| 双平台不兼容 | 原版和 OpenHacknet 的部分 API 有差异，用条件编译 `#if OpenHacknet` |
+| 双平台不兼容 | 原版和开源版的部分 API 有差异，用条件编译区分 |
 | Harmony 补丁没应用 | 确认类有 `[HarmonyPatch]`、方法签名匹配目标 |
 
 ---
@@ -187,4 +186,4 @@ BepInEx/plugins/MyMod.dll
 ## 参考资料
 
 - 完整可参考实现：**CSEL Mod**（本网站的 [csel-mod](/csel-mod/) 页面，含命令列表与补丁表）
-- 游戏源码：OpenHacknet 开源仓库（`ExtensionLoader.cs`、`ProgramRunner.cs`、`Programs.cs` 是核心参考文件）
+- 游戏源码：Hacknet 开源仓库（`ExtensionLoader.cs`、`ProgramRunner.cs`、`Programs.cs` 是核心参考文件）
