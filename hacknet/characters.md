@@ -23,6 +23,19 @@ title: 人物与剧情档案
 | **Tom Wilkins** | — | 剧情邮件高频发件人之一 |
 | **Matt Trobbiani** | — | 剧情邮件高频发件人之一 |
 
+### DLC（Labyrinths）角色
+
+| 人物/组织 | 身份 | 在剧情中的作用 |
+|---|---|---|
+| **Bibliotheque** | 黑客团队 | DLC 主线阵营（"图书馆"） |
+| **Kaguya** | Bibliotheque 领导 | 负责管理/侦察，DLC 的主线推动者 |
+| **D3f4ult** | Bibliotheque 成员 | 解密 / SSL / 木马专家 |
+| **Coel** | Bibliotheque 成员 | DLC 终局背叛团队的关键人物 |
+| **Striker** | 大学学生 | 玩家攻击目标，被删作业后发邮件骂人并反攻 |
+| **Anon** | 匿名黑客 | 暗处帮玩家清理日志、查明 Nisei MK III |
+| **Crypsis** | 委托组织 | 委托解密工具的第三方 |
+| **Psylance** | 安全公司 | 调查 PacificAir 航班相关的安防公司 |
+
 ---
 
 ## 主要人物
@@ -88,6 +101,47 @@ Bit 是最神秘也最重要的角色。他从头到尾引导你完成一系列�
 - **发件人**: `Polar Star`（2 封）
 - **相关服务器**: `Shrine of the Polar Star` → `Trial of Patience/Haste/Diligence/Focus` → `Head of the Polar Star`
 - **角色**: 一套以"试炼"命名的组织，考验玩家的耐心、速度、勤奋与专注。出现在"反黑 Naix"分支之后。
+
+---
+
+## DLC（Labyrinths）人物
+
+### Bibliotheque（图书馆）📚
+
+- **Hub 服务器**: `Bibliotheque` `69.58.186.114`（sec=6）、`Bibliotheque DropServer` `69.58.186.118`（sec=6，密码 `ka2gs69`）
+- **角色**: DLC 主线阵营。通过 Kaguya 试炼后加入的黑客团队，用 DHS 任务板发布委托。
+
+### Kaguya 🐇
+
+- **相关服务器**: `Kaguya_Gateway` `54.183.231.31`、`Kaguya_Projects` `54.183.231.34`（均为 sec=4）
+- **角色**: Bibliotheque 的**领导**，负责管理、侦察和协调。试炼通过后你成为第三个加入者。
+
+### D3f4ult
+
+- **角色**: Bibliotheque 成员，**解密 / SSL / 木马专家**。负责 Build Decryption Tools、Decypher Pacific Air Protocols 等解密类任务。
+
+### Coel ⚠️
+
+- **相关服务器**: `Coel__Gateway` `208.73.210.214`（sec=4，密码 `colamaeleon`）
+- **角色**: Bibliotheque 成员，**DLC 终局的反派/叛徒**。在坠机危机的关键时刻，她试图关掉 Bibliotheque 频道、打掉 D3f4ult 的网关（Finale 里她被 ban 踢出频道："Looks like Coel was trying to shut us down"）。
+
+### Striker
+
+- **相关服务器**: `Striker_Battlestation` `72.60.4.119`（sec=3）、`Striker Proxy` `72.52.4.119`（sec=6）、`Striker Cache` `72.52.4.117`（sec=3）
+- **角色**: 玩家的攻击目标——你删掉了他的大学作业。他发来骂人邮件（"Fuck you. Love, StrikeR"），并反过来对你的 PC 发动 **VM 级攻击**报复。
+
+### Anon 🕵️
+
+- **角色**: 匿名黑客。在一架 PacificAir 航班（PA_0022）上发现你留下的日志后主动帮你清理，还顺藤摸瓜查出了 **Nisei MK III** 的危险实验报告，确认你的团队已销毁其制造文件。他在暗处帮你擦屁股、善后。
+
+### Crypsis
+
+- **角色**: 另一个委托组织。在 DLC 早期委托 Bibliotheque 制作解密工具（Build Decryption Tools）。
+
+### Psylance
+
+- **相关服务器**: `Psylance Cyber Security_Employee IRC` `50.31.225.93`（sec=5）、`Psylance Internal Services/Archives`（sec=4）
+- **角色**: 一家安全公司，正在调查 PacificAir 航班相关系统，是 DLC 空航线段的主要对手（Subvert Psylance Investigation）。
 
 ---
 
