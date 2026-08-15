@@ -1,6 +1,9 @@
 import { defineUserConfig } from 'vuepress'
 import { viteBundler } from '@vuepress/bundler-vite'
 import { defaultTheme } from '@vuepress/theme-default'
+import { searchPlugin } from '@vuepress/plugin-search'
+import { markdownChartPlugin } from '@vuepress/plugin-markdown-chart'
+import markdownItKatex from 'markdown-it-katex'
 import site from './config.json'
 import navbar from './navbar.json'
 import themeColors from './theme.json'
@@ -23,6 +26,25 @@ export default defineUserConfig({
     siteTitle: '[CSEL]',
     sidebar: false,
   }),
+
+  plugins: [
+    // 本地全文搜索（navbar 搜索框）
+    searchPlugin({
+      locales: {
+        '/': { placeholder: '搜索' },
+      },
+    }),
+    // Mermaid 流程图 / 图表（```mermaid 代码块）
+    markdownChartPlugin({
+      mermaid: true,
+    }),
+  ],
+
+  // KaTeX 数学公式（$...$ 与 $$...$$）
+  extendsMarkdown: (md) => {
+    md.use(markdownItKatex)
+  },
+
   head: [
     ['style', {}, rootCss],
     [
@@ -31,6 +53,10 @@ export default defineUserConfig({
         rel: 'stylesheet',
         href: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap',
       },
+    ],
+    [
+      'link',
+      { rel: 'stylesheet', href: 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css' },
     ],
   ],
 })
