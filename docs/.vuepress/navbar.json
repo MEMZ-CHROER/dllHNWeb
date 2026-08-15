@@ -1,7 +1,7 @@
 [
   { "text": "首页", "link": "/" },
-  { "text": "Markdown教程", "link": "/md-jc" },
-  { "text": "Hacknet 百科", "link": "/hacknet" },
-  { "text": "编程知识", "link": "/programming" },
-  { "text": "CSEL Mod", "link": "/csel-mod" }
+  { "text": "Markdown教程", "link": "/md-jc/" },
+  { "text": "Hacknet 百科", "link": "/hacknet/" },
+  { "text": "编程知识", "link": "/programming/" },
+  { "text": "CSEL Mod", "link": "/csel-mod/" }
 ]

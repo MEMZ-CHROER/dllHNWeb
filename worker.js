@@ -261,9 +261,9 @@ export default {
       let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
       xml += `  <url><loc>${siteUrl}/</loc><priority>1.0</priority><lastmod>${now}</lastmod></url>\n`;
       pages.forEach(f => {
-        let urlPath = '/' + f.path.replace(/^docs\//, '').replace(/\.md$/, '');
-        if (urlPath === '/index') urlPath = '/';
-        urlPath = urlPath.replace(/\/index$/, '');   // /hacknet/index → /hacknet
+        // 目录式：docs/hacknet/commands/README.md → /hacknet/commands
+        let urlPath = '/' + f.path.replace(/^docs\//, '').replace(/\.md$/, '').replace(/\/README$/, '');
+        if (urlPath === '/') urlPath = '/';
         const priority = f.path.startsWith('docs/hacknet/') ? '0.7' : '0.8';
         xml += `  <url><loc>${siteUrl}${urlPath}</loc><priority>${priority}</priority><lastmod>${now}</lastmod></url>\n`;
       });

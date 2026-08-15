@@ -148,9 +148,10 @@ var shaMap = {};
 // ── VuePress 迁移：路径工具 ──
 // 仓库真实路径 → 站点 URL（docs/hacknet/foo.md → /hacknet/foo）
 function repoPathToUrl(p) {
-  var url = '/' + p.replace(/^docs\//, '').replace(/\.md$/, '');
-  if (url === '/index') return '/';
-  return url.replace(/\/index$/, '');
+  // 目录式：docs/hacknet/commands/README.md → /hacknet/commands
+  var url = '/' + p.replace(/^docs\//, '').replace(/\.md$/, '').replace(/\/README$/, '');
+  if (url === '/') return '/';
+  return url;
 }
 // 确保路径带 docs/ 前缀（新建/复制/上传）
 function ensureDocsPath(p) {
@@ -631,7 +632,7 @@ function loadList() {
     var html = '<div class="page-bar"><h2>📄 页面管理</h2><button class="btn" onclick="go(\'new\')">+ 新建页面</button></div>';
     html += '<table><tr><th>文件</th><th>标题</th><th style="width:240px">操作</th></tr>';
     mds.forEach(function(f) {
-      var title = f.path.replace(/^docs\//,'').replace('.md','').replace(/\//g,' / ');
+      var title = f.path.replace(/^docs\//,'').replace(/\.md$/,'').replace(/\/README$/,'').replace(/\//g,' / ');
       html += '<tr><td><a href="' + SITE + repoPathToUrl(f.path) + '" target="_blank">' + f.path + '</a></td>';
       html += '<td class="dim">' + title + '</td>';
       html += '<td><button class="btn btn-sm" onclick="editFile(\'' + f.path + '\')">编辑</button> ';
@@ -949,7 +950,7 @@ window.delFile = function(path) {
 window.dupFile = function(path) {
   var newName = prompt('复制为（输入新文件名，不含 .md）：', path.replace('.md','') + '-copy');
   if (!newName) return;
-  var newPath = ensureDocsPath(newName + (newName.endsWith('.md') ? '' : '.md'));
+  var newPath = ensureDocsPath(newName.replace(/\.md$/,'').replace(/\/+$/,'') + '/README.md');
   document.getElementById('main').innerHTML = '<p>复制中...</p>';
   ghRaw('/repos/' + REPO + '/contents/' + path + '?ref=' + BRANCH).then(function(content) {
     gh('/repos/' + REPO + '/contents/' + newPath, {
@@ -1027,7 +1028,7 @@ window.createPage = function() {
   var name = document.getElementById('npath').value.trim();
   var content = document.getElementById('ncontent').value;
   if (!name) { alert('请输入文件名'); return; }
-  var path = ensureDocsPath(name + (name.endsWith('.md') ? '' : '.md'));
+  var path = ensureDocsPath(name.replace(/\.md$/,'').replace(/\/+$/,'') + '/README.md');
   document.getElementById('main').innerHTML = '<p>创建中...</p>';
   gh('/repos/' + REPO + '/contents/' + path, {
     method: 'PUT',
@@ -1203,10 +1204,10 @@ function loadNavbar() {
     if (!Array.isArray(items) || items.length === 0) {
       items = [
         { text: '首页', link: '/' },
-        { text: 'Markdown教程', link: '/md-jc' },
-        { text: 'Hacknet 百科', link: '/hacknet' },
-        { text: '编程知识', link: '/programming' },
-        { text: 'CSEL Mod', link: '/csel-mod' }
+        { text: 'Markdown教程', link: '/md-jc/' },
+        { text: 'Hacknet 百科', link: '/hacknet/' },
+        { text: '编程知识', link: '/programming/' },
+        { text: 'CSEL Mod', link: '/csel-mod/' }
       ];
     }
     window._navItems = items;
@@ -1243,7 +1244,7 @@ ${listHtml}
 
 window.addNavItem = function() {
   if (!window._navItems) window._navItems = [];
-  window._navItems.push({ text: '新页面', link: '/new-page' });
+  window._navItems.push({ text: '新页面', link: '/new-page/' });
   renderNavEditor();
 };
 
