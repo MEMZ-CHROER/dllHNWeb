@@ -145,6 +145,19 @@ const BRANCH = 'master';
 const SITE = '.';
 var shaMap = {};
 
+// ── VuePress 迁移：路径工具 ──
+// 仓库真实路径 → 站点 URL（docs/hacknet/foo.md → /hacknet/foo）
+function repoPathToUrl(p) {
+  var url = '/' + p.replace(/^docs\//, '').replace(/\.md$/, '');
+  if (url === '/index') return '/';
+  return url.replace(/\/index$/, '');
+}
+// 确保路径带 docs/ 前缀（新建/复制/上传）
+function ensureDocsPath(p) {
+  if (!p) return p;
+  return p.indexOf('docs/') === 0 ? p : 'docs/' + p;
+}
+
 // ── 密码 ──
 var _session = null;
 
@@ -162,6 +175,7 @@ function gh(url, opts) {
   return fetch('/api' + url, Object.assign({
     headers: { Accept: 'application/vnd.github.v3+json' }
   }, opts)).then(function(r) {
+    if (r.status === 204) return {};   // 无内容响应（如 Actions dispatch）
     return r.json().catch(function() {
       return r.text().then(function(t) { throw new Error('HTTP ' + r.status + ': ' + t.substring(0,80)); });
     });
@@ -293,7 +307,7 @@ function loadDashboard() {
     var commits = results[1] || [];
     if (data.message) { main.innerHTML = '<p class="red">' + data.message + '</p>'; return; }
     var mds = data.tree.filter(function(f) { return f.path.endsWith('.md') && f.path !== 'README.md'; });
-    var imgs = data.tree.filter(function(f) { return f.path.startsWith('assets/img/'); });
+    var imgs = data.tree.filter(function(f) { return f.path.startsWith('.vuepress/public/assets/img/'); });
     var recent = data.tree.slice(-10).reverse();
     var html = '<div class="page-bar"><h2>🏠 仪表盘</h2></div>';
     html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px;">';
@@ -340,7 +354,7 @@ function loadMedia() {
   main.innerHTML = '<p>加载中...</p><div style="margin-top:12px"><input type="file" id="mediaUpload" accept="image/*" onchange="uploadMedia()" /></div>';
   gh('/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1').then(function(data) {
     if (data.message) { main.innerHTML = '<p class="red">' + data.message + '</p>'; return; }
-    var imgs = data.tree.filter(function(f) { return f.path.startsWith('assets/img/'); });
+    var imgs = data.tree.filter(function(f) { return f.path.startsWith('.vuepress/public/assets/img/'); });
     var html = '<div class="page-bar"><h2>🖼 媒体库</h2></div>';
     html += '<div style="margin-bottom:12px"><input type="file" id="mediaUpload" accept="image/*" onchange="uploadMedia()" /> <span id="mediaStatus" class="dim"></span></div>';
     if (imgs.length === 0) { html += '<p class="dim">暂无图片</p>'; main.innerHTML = html; return; }
@@ -372,7 +386,7 @@ window.uploadMedia = function() {
   var reader = new FileReader();
   reader.onload = function() {
     var base64 = reader.result.split(',')[1];
-    var name = 'assets/img/' + file.name;
+    var name = '.vuepress/public/assets/img/' + file.name;
     gh('/repos/' + REPO + '/contents/' + name, { method: 'PUT', body: JSON.stringify({
       message: 'upload ' + file.name,
       content: base64,
@@ -420,14 +434,15 @@ function loadPasswords() {
     var tree = results[0];
     if (tree.message) { main.innerHTML = '<p class="red">' + tree.message + '</p>'; return; }
     var pwData = results[1] || {};
-    var pages = tree.tree.filter(function(f) { return f.path.endsWith('.md') && f.path !== 'README.md'; });
+    var pages = tree.tree.filter(function(f) { return f.path.startsWith('docs/') && f.path.endsWith('.md') && f.path !== 'docs/README.md'; });
     var html = '<div class="page-bar"><h2>🔐 页面密码</h2></div>';
-    html += '<p class="dim">为页面设置访问密码。密码留空 = 不加密。</p>';
+    html += '<p class="dim">为页面设置访问密码。密码留空 = 不加密。（首页不支持设密码）</p>';
     html += '<table><tr><th>页面</th><th>密码</th><th>操作</th></tr>';
     pages.forEach(function(f) {
-      var pagePath = '/' + f.path.replace('.md', '');
+      var pagePath = repoPathToUrl(f.path);
+      if (pagePath === '/') return; // 首页密码键边界，跳过
       var hasPw = pwData[pagePath] ? pwData[pagePath] : '';
-      html += '<tr><td>' + f.path.replace('.md', '') + '</td>';
+      html += '<tr><td>' + pagePath + '</td>';
       html += '<td><input type="text" data-page-path="' + escHtml(pagePath) + '" value="' + escHtml(hasPw) + '" placeholder="留空 = 不加密" style="width:160px;font-size:13px;" /></td>';
       html += '<td><button class="btn btn-sm" onclick="savePw(this)">保存</button></td></tr>';
     });
@@ -564,7 +579,7 @@ window.doSearch = function() {
   results.innerHTML = '<p>搜索中...</p>';
   gh('/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1').then(function(data) {
     if (data.message) { results.innerHTML = '<p class="red">' + data.message + '</p>'; return; }
-    var mds = data.tree.filter(function(f) { return f.path.endsWith('.md') && f.path !== 'README.md'; });
+    var mds = data.tree.filter(function(f) { return f.path.startsWith('docs/') && f.path.endsWith('.md') && f.path !== 'docs/README.md'; });
     var found = [];
     var loaded = 0;
     mds.forEach(function(f) {
@@ -597,8 +612,8 @@ function renderSearchResults(q, found, results) {
   }
   var html = '<p>找到 ' + found.length + ' 个结果：</p><table>';
   found.forEach(function(f) {
-    var pagePath = f.path.replace('.md', '');
-    html += '<tr><td><a href="' + SITE + '/' + pagePath + '" target="_blank">' + f.path + '</a><br><span class="dim" style="font-size:12px;">' + escHtml(f.excerpt) + '</span></td>';
+    var pagePath = repoPathToUrl(f.path);
+    html += '<tr><td><a href="' + SITE + pagePath + '" target="_blank">' + f.path + '</a><br><span class="dim" style="font-size:12px;">' + escHtml(f.excerpt) + '</span></td>';
     html += '<td style="width:80px"><button class="btn btn-sm" onclick="editFile(\'' + f.path + '\')">编辑</button></td></tr>';
   });
   html += '</table>';
@@ -610,21 +625,21 @@ function loadList() {
   document.getElementById('main').innerHTML = '<p>加载中...</p>';
   gh('/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1').then(function(data) {
     if (data.message) { document.getElementById('main').innerHTML = '<p class="red">' + data.message + '</p>'; return; }
-    var mds = data.tree.filter(function(f) { return (f.path.endsWith('.md') || f.path.endsWith('.html')) && f.path.indexOf('node_modules')===-1 && f.path !== 'README.md'; });
+    var mds = data.tree.filter(function(f) { return f.path.startsWith('docs/') && f.path.endsWith('.md') && f.path !== 'docs/README.md'; });
     data.tree.forEach(function(f) { shaMap[f.path] = f.sha; });
 
     var html = '<div class="page-bar"><h2>📄 页面管理</h2><button class="btn" onclick="go(\'new\')">+ 新建页面</button></div>';
     html += '<table><tr><th>文件</th><th>标题</th><th style="width:240px">操作</th></tr>';
     mds.forEach(function(f) {
-      var title = f.path.replace('.md','').replace(/^content\/pages\//,'').replace(/\//g,' / ');
-      html += '<tr><td><a href="' + SITE + '/' + f.path.replace('.md','') + '" target="_blank">' + f.path + '</a></td>';
+      var title = f.path.replace(/^docs\//,'').replace('.md','').replace(/\//g,' / ');
+      html += '<tr><td><a href="' + SITE + repoPathToUrl(f.path) + '" target="_blank">' + f.path + '</a></td>';
       html += '<td class="dim">' + title + '</td>';
       html += '<td><button class="btn btn-sm" onclick="editFile(\'' + f.path + '\')">编辑</button> ';
       html += '<button class="btn btn-sm" onclick="dupFile(\'' + f.path + '\')">📋复制</button> ';
-      if (isAdmin()) html += '<button class="btn btn-sm btn-amber" onclick="quickPublish(\'' + f.path + '\')">⚡发布</button> ';
+      if (isAdmin()) html += '<button class="btn btn-sm btn-amber" onclick="triggerPagesBuild()">🚀构建</button> ';
       html += '<button class="btn btn-sm btn-red" onclick="delFile(\'' + f.path + '\')">删除</button></td></tr>';
     });
-    html += '</table><p class="dim" style="margin-top:8px">⚡发布 = 直接提交 HTML 版本，立刻生效（不等 Pages 构建）</p>';
+    html += '</table><p class="dim" style="margin-top:8px">保存页面后自动触发 VuePress 构建部署（约 1-2 分钟生效）。🚀构建 = 手动触发。</p>';
     document.getElementById('main').innerHTML = html;
   });
 }
@@ -650,7 +665,6 @@ function parseFrontmatter(raw) {
 function buildFrontmatter(meta, body) {
   var fm = '---\n';
   if (meta.title) fm += 'title: ' + meta.title + '\n';
-  if (meta.layout) fm += 'layout: ' + meta.layout + '\n';
   fm += '---\n\n' + body.trimStart();
   return fm;
 }
@@ -706,7 +720,6 @@ function showModal(path, content) {
       draftNotice = '<div class="warn" style="margin-bottom:8px"><b>💾 草稿已恢复</b> 上次未保存的编辑已自动加载。 <button class="btn btn-sm" onclick="discardDraft(\'' + path + '\')">丢弃草稿</button></div>';
       body = draftParsed.body;
       if (draftParsed.meta.title) meta.title = draftParsed.meta.title;
-      if (draftParsed.meta.layout) meta.layout = draftParsed.meta.layout;
     }
   }
   var overlay = document.createElement('div');
@@ -718,7 +731,6 @@ function showModal(path, content) {
   h.push(draftNotice);
   h.push('<div style="display:flex;gap:12px;margin-bottom:8px;">');
   h.push('<div style="flex:1"><label style="display:block;font-size:13px;opacity:.7;margin-bottom:2px">标题（YAML title）</label><input type="text" id="mtitle" value="' + escHtml(meta.title||'') + '" style="width:100%;font-size:13px;" oninput="updatePreviewFromMeta()" /></div>');
-  h.push('<div style="width:120px"><label style="display:block;font-size:13px;opacity:.7;margin-bottom:2px">布局（layout）</label><input type="text" id="mlayout" value="' + escHtml(meta.layout||'') + '" placeholder="default" style="width:100%;font-size:13px;" /></div>');
   h.push('</div>');
   h.push('<div class="editor-wrap"><div class="editor-toolbar" id="modalToolbar"></div><div class="editor-panes">');
   h.push('<textarea id="mcontent" oninput="onModalEdit(\'' + path + '\')">' + escHtml(body||'') + '</textarea>');
@@ -746,11 +758,10 @@ function showModal(path, content) {
 function onModalEdit(path) {
   // Auto-save draft
   var titleEl = document.getElementById('mtitle');
-  var layoutEl = document.getElementById('mlayout');
   var bodyEl = document.getElementById('mcontent');
   if (!bodyEl) return;
   var full = buildFrontmatter(
-    { title: titleEl ? titleEl.value.trim() : '', layout: layoutEl ? layoutEl.value.trim() : '' },
+    { title: titleEl ? titleEl.value.trim() : '' },
     bodyEl.value
   );
   saveDraft(path, full);
@@ -835,14 +846,12 @@ function previewMd() {
 window.saveModal = function() {
   var path = document.getElementById('mpath').value.trim();
   var titleEl = document.getElementById('mtitle');
-  var layoutEl = document.getElementById('mlayout');
   var contentEl = document.getElementById('mcontent');
   var title = titleEl ? titleEl.value.trim() : '';
-  var layout = layoutEl ? layoutEl.value.trim() : 'default';
   var body = contentEl ? contentEl.value : '';
   if (!path) return;
   // Reconstruct full content with frontmatter
-  var fullContent = buildFrontmatter({ title: title, layout: layout }, body);
+  var fullContent = buildFrontmatter({ title: title }, body);
   // Clear draft before closing
   clearDraft(window._modalDraftPath || path);
   closeModal();
@@ -918,78 +927,10 @@ window.restoreVersion = function(path, sha, shortSha) {
     document.getElementById('historyContent').innerHTML = '<p class="red">加载失败: ' + e.message + '</p>';
   });
 };
-window.quickPublish = function(path) {
-  var main = document.getElementById('main');
-  main.innerHTML = '<p>⚡ 渲染并发布 ' + path + '...</p>';
-
-  // Load marked if not yet loaded
-  if (!window.marked) {
-    var s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/marked/marked.min.js';
-    s.onload = function() { doPublish(path); };
-    document.body.appendChild(s);
-  } else {
-    doPublish(path);
-  }
+// ── 触发构建（VuePress 迁移后：⚡发布 → 🚀构建）──
+window.quickPublish = function() {
+  triggerPagesBuild();
 };
-
-function doPublish(path) {
-  var main = document.getElementById('main');
-  ghRaw('/repos/' + REPO + '/contents/' + path + '?ref=' + BRANCH).then(function(md) {
-    // Get layout for wrapper
-    ghRaw('/repos/' + REPO + '/contents/_layouts/default.html?ref=' + BRANCH).then(function(layout) {
-      // Debug: check first 50 chars
-      if (layout.charAt(0) === '{') {
-        main.innerHTML = '<p class="red">❌ API 返回了 JSON 而非文件内容。token 可能权限不足。</p>';
-        return;
-      }
-      var htmlPath = path.replace('.md', '.html');
-      var title = path.replace('.md','').split('/').pop();
-
-      // Extract YAML frontmatter title
-      var titleMatch = md.match(/^---[\s\S]*?title:\s*(.+)[\s\S]*?---/);
-      if (titleMatch) title = titleMatch[1].trim();
-
-      // Strip frontmatter, render markdown
-      var body = md.replace(/^---[\s\S]*?---\s*/, '');
-      var rendered = marked.parse(body);
-
-      // Build complete HTML: replace layout vars FIRST, then content last
-      var pageHtml = layout
-        .replace(/{{ page\.title }}/g, title)
-        .replace(/{{ site\.title }}/g, 'DllHN · CSEL')
-        .replace(/{{ site\.baseurl }}/g, '')
-        .replace(/{{ page\.url }}/g, '/' + htmlPath)
-        .replace(/{{ content }}/g, function() { return rendered; });
-
-      // Get SHA if html file already exists
-      var sha = null;
-      if (shaMap[htmlPath]) sha = shaMap[htmlPath];
-
-      var body2 = { message: 'quick publish ' + htmlPath, content: b64enc(pageHtml), branch: BRANCH };
-      if (sha) body2.sha = sha;
-
-      main.innerHTML = '<p>⏫ 提交 HTML 到 GitHub...</p>';
-      gh('/repos/' + REPO + '/contents/' + htmlPath, { method: 'PUT', body: JSON.stringify(body2) }).then(function(d) {
-        if (d.content) {
-          shaMap[htmlPath] = d.content.sha;
-          main.innerHTML = '<p class="green">✅ 静态页已发布！<a href="/' + htmlPath + '" target="_blank">立即查看</a></p>';
-          // 同时触发 Pages 重建，让 Jekyll 版也跟上
-          main.innerHTML += '<p class="dim">⏫ 正在触发 Pages 重建...</p>';
-          gh('/repos/' + REPO + '/pages/builds', { method: 'POST' }).then(function(b) {
-            main.innerHTML += '<p class="green">✅ Pages 重建中（约 30 秒），刷新后可用 Jekyll 版本</p>';
-          }).catch(function(e) {
-            main.innerHTML += '<p class="dim">⚠ Pages 重建触发失败（不影响已发布的静态页）</p>';
-          });
-        } else {
-          main.innerHTML = '<p class="red">发布失败: ' + (d.message||'') + '</p>';
-        }
-      });
-    });
-  }).catch(function(e) {
-    main.innerHTML = '<p class="red">发布失败: ' + e.message + '</p>';
-  });
-}
 
 window.delFile = function(path) {
   if (!confirm('确定删除 ' + path + ' ？')) return;
@@ -1008,7 +949,7 @@ window.delFile = function(path) {
 window.dupFile = function(path) {
   var newName = prompt('复制为（输入新文件名，不含 .md）：', path.replace('.md','') + '-copy');
   if (!newName) return;
-  var newPath = newName + (newName.endsWith('.md') ? '' : '.md');
+  var newPath = ensureDocsPath(newName + (newName.endsWith('.md') ? '' : '.md'));
   document.getElementById('main').innerHTML = '<p>复制中...</p>';
   ghRaw('/repos/' + REPO + '/contents/' + path + '?ref=' + BRANCH).then(function(content) {
     gh('/repos/' + REPO + '/contents/' + newPath, {
@@ -1086,7 +1027,7 @@ window.createPage = function() {
   var name = document.getElementById('npath').value.trim();
   var content = document.getElementById('ncontent').value;
   if (!name) { alert('请输入文件名'); return; }
-  var path = name + (name.endsWith('.md') ? '' : '.md');
+  var path = ensureDocsPath(name + (name.endsWith('.md') ? '' : '.md'));
   document.getElementById('main').innerHTML = '<p>创建中...</p>';
   gh('/repos/' + REPO + '/contents/' + path, {
     method: 'PUT',
@@ -1103,51 +1044,44 @@ function loadSettings() {
   if (!isAdmin()) { go('dashboard'); return; }
   var main = document.getElementById('main');
   main.innerHTML = '<p>加载中...</p>';
-  gh('/repos/' + REPO + '/contents/_config.yml?ref=' + BRANCH).then(function(meta) {
+  gh('/repos/' + REPO + '/contents/.vuepress/config.json?ref=' + BRANCH).then(function(meta) {
     if (!meta || meta.message) { main.innerHTML = '<p class="red">' + (meta ? meta.message : '空响应') + '</p>'; return; }
     window._cfgSha = meta.sha;
     var raw = meta.content.replace(/\n/g, '').replace(/\r/g, '');
     var txt = atob(raw);
     try { txt = decodeURIComponent(escape(txt)); } catch(e) {}
-    // Parse simple YAML fields
-    var fields = { title: getYaml(txt,'title'), description: getYaml(txt,'description'), url: getYaml(txt,'url'), baseurl: getYaml(txt,'baseurl') };
+    var fields = {};
+    try { fields = JSON.parse(txt || '{}'); } catch(e) { fields = {}; }
     main.innerHTML =
       '<div class="page-bar"><h2>⚙ 站点设置</h2></div>' +
+      '<p class="dim">修改后保存，推送 master 自动触发 VuePress 构建（约 1-2 分钟生效）。</p>' +
       '<label style="display:block;margin:12px 0 4px;opacity:.7">网站标题</label>' +
-      '<input type="text" id="s_title" value="' + escHtml(fields.title) + '" style="width:100%" />' +
+      '<input type="text" id="s_title" value="' + escHtml(fields.title||'') + '" style="width:100%" />' +
       '<label style="display:block;margin:12px 0 4px;opacity:.7">描述</label>' +
-      '<input type="text" id="s_desc" value="' + escHtml(fields.description) + '" style="width:100%" />' +
-      '<label style="display:block;margin:12px 0 4px;opacity:.7">URL</label>' +
-      '<input type="text" id="s_url" value="' + escHtml(fields.url) + '" style="width:100%" />' +
-      '<label style="display:block;margin:12px 0 4px;opacity:.7">Base URL</label>' +
-      '<input type="text" id="s_base" value="' + escHtml(fields.baseurl) + '" style="width:100%" />' +
+      '<input type="text" id="s_desc" value="' + escHtml(fields.description||'') + '" style="width:100%" />' +
+      '<label style="display:block;margin:12px 0 4px;opacity:.7">站点 URL</label>' +
+      '<input type="text" id="s_url" value="' + escHtml(fields.url||'') + '" style="width:100%" />' +
       '<div style="margin-top:16px"><button class="btn" onclick="saveSettings()">💾 保存设置</button> <span id="cfgStatus" class="dim"></span></div>';
   }).catch(function(e) {
     main.innerHTML = '<p class="red">加载失败: ' + (e.message||e) + '</p>';
   });
 }
 
-function getYaml(txt, key) {
-  var re = new RegExp('^' + key + ':\\s*"?([^"\\n]+)', 'm');
-  var m = txt.match(re);
-  return m ? m[1].trim().replace(/["']$/,'') : '';
-}
-
 window.saveSettings = function() {
   var sha = window._cfgSha;
-  var title = document.getElementById('s_title').value;
-  var desc = document.getElementById('s_desc').value;
-  var url = document.getElementById('s_url').value;
-  var base = document.getElementById('s_base').value;
-  var yml = 'title: ' + title + '\ndescription: ' + desc + '\nurl: "' + url + '"\nbaseurl: "' + base + '"\nmarkdown: kramdown\npermalink: /:title/\ninclude:\n  - admin\ndefaults:\n  - scope:\n      path: ""\n    values:\n      layout: "default"\n';
+  var data = {
+    title: document.getElementById('s_title').value.trim(),
+    description: document.getElementById('s_desc').value.trim(),
+    url: document.getElementById('s_url').value.trim()
+  };
   document.getElementById('cfgStatus').textContent = '保存中...';
-  gh('/repos/' + REPO + '/contents/_config.yml', { method: 'PUT', body: JSON.stringify({
+  gh('/repos/' + REPO + '/contents/.vuepress/config.json', { method: 'PUT', body: JSON.stringify({
     message: 'update site settings',
-    content: b64enc(yml),
+    content: b64enc(JSON.stringify(data, null, 2) + '\n'),
     sha: sha,
     branch: BRANCH
   })}).then(function(d) {
-    if (d.content) { window._cfgSha = d.content.sha; document.getElementById('cfgStatus').textContent = '✅ 已保存'; }
+    if (d.content) { window._cfgSha = d.content.sha; document.getElementById('cfgStatus').textContent = '✅ 已保存，Actions 自动重建中（约 1-2 分钟）'; }
     else document.getElementById('cfgStatus').textContent = '❌ 保存失败: ' + (d.message||'');
   });
 };
@@ -1159,32 +1093,27 @@ function loadStyle() {
   if (!isAdmin()) { go('dashboard'); return; }
   var main = document.getElementById('main');
   main.innerHTML = '<p>加载中...</p>';
-  gh('/repos/' + REPO + '/contents/assets/css/style.css?ref=' + BRANCH).then(function(meta) {
+  gh('/repos/' + REPO + '/contents/.vuepress/theme.json?ref=' + BRANCH).then(function(meta) {
     if (!meta || meta.message) { main.innerHTML = '<p class="red">' + (meta ? meta.message : '空响应') + '</p>'; return; }
     window._stySha = meta.sha;
     var raw = meta.content.replace(/\n/g, '');
     var txt = atob(raw);
     try { txt = decodeURIComponent(escape(txt)); } catch(e) {}
-    window._rawCss = txt;
+    var theme = {};
+    try { theme = JSON.parse(txt || '{}'); } catch(e) { theme = {}; }
+    window._themeData = theme;
 
-    // Parse CSS variables
-    var vars = {};
-    var re = /--([\w-]+)\s*:\s*([^;]+)/g;
-    var m;
-    while ((m = re.exec(txt)) !== null) vars[m[1]] = m[2].trim();
-    _styleVars = vars;
-
-    // Build GUI
+    // Build GUI（6 个主题色，来自 theme.json）
     var html = '<div class="page-bar"><h2>🎨 样式编辑器</h2></div>';
+    html += '<p class="dim">修改主题色，保存后推送 master 自动触发 VuePress 构建（约 1-2 分钟生效）。</p>';
     html += '<div style="margin-bottom:12px"><button class="btn" onclick="saveStyleGui()">💾 保存样式</button> <span id="styStatus" class="dim"></span></div>';
     html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">';
 
-    // Color variables
-    var colorKeys = ['bg','fg','accent','accent2','border','card-bg'];
+    var colorKeys = ['bg','fg','accent','accent2','border','cardBg'];
     colorKeys.forEach(function(k) {
-      var val = vars[k] || '#000000';
+      var val = theme[k] || '#000000';
       html += '<div style="background:#111;border:1px solid #2a2a3a;padding:14px;">';
-      html += '<label style="display:block;font-size:13px;opacity:.7;margin-bottom:6px;">--' + k + '</label>';
+      html += '<label style="display:block;font-size:13px;opacity:.7;margin-bottom:6px;">' + k + '</label>';
       html += '<div style="display:flex;gap:10px;align-items:center;">';
       html += '<input type="color" id="cv_' + k + '" value="' + toHex(val) + '" style="width:50px;height:36px;border:none;padding:2px;background:transparent;cursor:pointer;" />';
       html += '<input type="text" id="ct_' + k + '" value="' + escHtml(val) + '" style="flex:1;font-size:13px;" oninput="previewStyle()" />';
@@ -1192,18 +1121,6 @@ function loadStyle() {
       html += '</div></div>';
     });
 
-    html += '</div>';
-
-    // Numeric / text settings
-    html += '<div style="margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">';
-    var textKeys = Object.keys(vars).filter(function(k) { return colorKeys.indexOf(k) === -1; });
-    textKeys.forEach(function(k) {
-      var val = vars[k];
-      html += '<div style="background:#111;border:1px solid #2a2a3a;padding:14px;">';
-      html += '<label style="display:block;font-size:13px;opacity:.7;margin-bottom:6px;">--' + k + '</label>';
-      html += '<input type="text" id="vt_' + k + '" value="' + escHtml(val) + '" style="width:100%;font-size:13px;" />';
-      html += '</div>';
-    });
     html += '</div>';
 
     // Preview
@@ -1234,7 +1151,7 @@ function toHex(color) {
 }
 
 function previewStyle() {
-  var colorKeys = ['bg','fg','accent','accent2','border','card-bg'];
+  var colorKeys = ['bg','fg','accent','accent2','border','cardBg'];
   var preview = document.getElementById('stylePreview');
   if (!preview) return;
   colorKeys.forEach(function(k) {
@@ -1246,29 +1163,22 @@ function previewStyle() {
 }
 
 window.saveStyleGui = function() {
-  var css = window._rawCss || '';
-  Object.keys(_styleVars).forEach(function(k) {
-    var el = document.getElementById('vt_' + k) || document.getElementById('ct_' + k);
-    if (el && el.value !== _styleVars[k]) {
-      var re = new RegExp('(--' + k + '\\s*:\\s*)[^;]+');
-      css = css.replace(re, '$1' + el.value);
-    }
+  var theme = window._themeData || {};
+  var colorKeys = ['bg','fg','accent','accent2','border','cardBg'];
+  colorKeys.forEach(function(k) {
+    var el = document.getElementById('ct_' + k);
+    if (el && el.value) theme[k] = el.value.trim();
   });
   document.getElementById('styStatus').textContent = '保存中...';
-  gh('/repos/' + REPO + '/contents/assets/css/style.css', { method: 'PUT', body: JSON.stringify({
-    message: 'update style.css',
-    content: b64enc(css),
+  gh('/repos/' + REPO + '/contents/.vuepress/theme.json', { method: 'PUT', body: JSON.stringify({
+    message: 'update theme.json',
+    content: b64enc(JSON.stringify(theme, null, 2) + '\n'),
     sha: window._stySha,
     branch: BRANCH
   })}).then(function(d) {
     if (d.content) {
-      window._stySha = d.content.sha; window._rawCss = css;
-      document.getElementById('styStatus').textContent = '✅ 已保存，触发 Pages 重建...';
-      gh('/repos/' + REPO + '/pages/builds', { method: 'POST' }).then(function() {
-        document.getElementById('styStatus').textContent = '✅ 已保存，Pages 重建中（~30 秒）';
-      }).catch(function() {
-        document.getElementById('styStatus').textContent = '✅ 已保存（手动刷新 Pages）';
-      });
+      window._stySha = d.content.sha; window._themeData = theme;
+      document.getElementById('styStatus').textContent = '✅ 已保存，Actions 自动重建中（约 1-2 分钟）';
     }
     else document.getElementById('styStatus').textContent = '❌ 保存失败: ' + (d.message||'');
   }).catch(function(e) {
@@ -1281,29 +1191,22 @@ function loadNavbar() {
   var main = document.getElementById('main');
   if (!main) { alert('main element missing'); return; }
   main.innerHTML = '<p>加载中...</p>';
-  gh('/repos/' + REPO + '/contents/_layouts/default.html?ref=' + BRANCH).then(function(meta) {
+  gh('/repos/' + REPO + '/contents/.vuepress/navbar.json?ref=' + BRANCH).then(function(meta) {
     if (!meta || meta.message) { main.innerHTML = '<p class="red">' + (meta ? meta.message : '空响应') + '</p>'; return; }
     if (!meta.content) { main.innerHTML = '<p class="red">响应中没有文件内容</p>'; return; }
     window._navSha = meta.sha;
     var raw = meta.content.replace(/\n/g, '').replace(/\r/g, '');
     var content = atob(raw);
     try { content = decodeURIComponent(escape(content)); } catch(e) {}
-    if (content.length < 10) { main.innerHTML = '<p class="red">文件内容为空</p>'; return; }
-    window._navHtml = content;
-    // Parse existing nav items from <ul> in navbar
-    var navMatch = content.match(/<ul>([\s\S]*?)<\/ul>/i);
     var items = [];
-    if (navMatch) {
-      var re = /<li><a\s+href="([^"]+)"[^>]*>([^<]+)<\/a><\/li>/gi;
-      var m;
-      while ((m = re.exec(navMatch[1])) !== null) {
-        items.push({ href: m[1], label: m[2] });
-      }
-    }
-    if (items.length === 0) {
+    try { items = JSON.parse(content || '[]'); } catch(e) { items = []; }
+    if (!Array.isArray(items) || items.length === 0) {
       items = [
-        { href: '{{ site.baseurl }}/', label: '首页' },
-        { href: '{{ site.baseurl }}/csel-mod', label: 'CSEL Mod' }
+        { text: '首页', link: '/' },
+        { text: 'Markdown教程', link: '/md-jc' },
+        { text: 'Hacknet 百科', link: '/hacknet' },
+        { text: '编程知识', link: '/programming' },
+        { text: 'CSEL Mod', link: '/csel-mod' }
       ];
     }
     window._navItems = items;
@@ -1321,8 +1224,8 @@ function renderNavEditor() {
     listHtml += '<tr>';
     listHtml += '<td style="cursor:move;font-size:18px;opacity:.4" onclick="moveNavItem(' + i + ',-1)">↑</td>';
     listHtml += '<td style="cursor:move;font-size:18px;opacity:.4" onclick="moveNavItem(' + i + ',1)">↓</td>';
-    listHtml += '<td><input type="text" id="nlabel' + i + '" value="' + escHtml(item.label) + '" style="width:100%" /></td>';
-    listHtml += '<td><input type="text" id="nhref' + i + '" value="' + escHtml(item.href) + '" style="width:100%;font-size:12px;" /></td>';
+    listHtml += '<td><input type="text" id="nlabel' + i + '" value="' + escHtml(item.text) + '" style="width:100%" /></td>';
+    listHtml += '<td><input type="text" id="nhref' + i + '" value="' + escHtml(item.link) + '" style="width:100%;font-size:12px;" /></td>';
     listHtml += '<td><button class="btn btn-sm btn-red" onclick="delNavItem(' + i + ')">✕</button></td>';
     listHtml += '</tr>';
   });
@@ -1340,7 +1243,7 @@ ${listHtml}
 
 window.addNavItem = function() {
   if (!window._navItems) window._navItems = [];
-  window._navItems.push({ href: '{{ site.baseurl }}/new-page', label: '新页面' });
+  window._navItems.push({ text: '新页面', link: '/new-page' });
   renderNavEditor();
 };
 
@@ -1361,31 +1264,28 @@ window.moveNavItem = function(i, dir) {
 
 window.saveNavbar = function() {
   var items = window._navItems || [];
-  var listHtml = '';
+  var newItems = [];
   items.forEach(function(item, idx) {
     var label = document.getElementById('nlabel' + idx);
     var href = document.getElementById('nhref' + idx);
-    listHtml += '    <li><a href="' + (href ? href.value.trim() : item.href) + '">' + (label ? label.value.trim() : item.label) + '</a></li>\n';
+    var text = (label ? label.value.trim() : item.text) || '';
+    var link = (href ? href.value.trim() : item.link) || '';
+    if (text || link) newItems.push({ text: text, link: link });
   });
-  listHtml = listHtml.replace(/\{\{site\.baseurl\}\}/g, '{{ site.baseurl }}');
-
-  // Replace the nav <ul> in the template
-  var html = window._navHtml;
-  html = html.replace(/<ul>[\s\S]*?<\/ul>/i, '<ul>\n' + listHtml + '  </ul>');
 
   document.getElementById('navStatus').textContent = '保存中...';
   var body = {
     message: 'update navbar',
-    content: b64enc(html),
+    content: b64enc(JSON.stringify(newItems, null, 2) + '\n'),
     branch: BRANCH
   };
   if (window._navSha) body.sha = window._navSha;
 
-  gh('/repos/' + REPO + '/contents/_layouts/default.html', { method: 'PUT', body: JSON.stringify(body) }).then(function(d) {
+  gh('/repos/' + REPO + '/contents/.vuepress/navbar.json', { method: 'PUT', body: JSON.stringify(body) }).then(function(d) {
     if (d.content) {
       window._navSha = d.content.sha;
-      window._navHtml = html;
-      document.getElementById('navStatus').textContent = '✅ 已保存';
+      window._navItems = newItems;
+      document.getElementById('navStatus').textContent = '✅ 已保存，Actions 自动重建中（约 1-2 分钟）';
     } else {
       document.getElementById('navStatus').textContent = '❌ 保存失败: ' + (d.message||'');
     }
@@ -1398,17 +1298,17 @@ function loadPagesBuild() {
   main.innerHTML = '<p>加载中...</p>';
   Promise.all([
     gh('/repos/' + REPO + '/pages').catch(function() { return null; }),
-    gh('/repos/' + REPO + '/pages/builds?per_page=100').catch(function() { return []; })
+    gh('/repos/' + REPO + '/actions/runs?per_page=20').catch(function() { return { total_count: 0, workflow_runs: [] }; })
   ]).then(function(results) {
     var info = results[0];
-    var builds = results[1] || [];
-    var html = '<div class="page-bar"><h2>🚀 Pages 构建</h2><button class="btn" onclick="triggerPagesBuild()" id="buildBtn">▶ 触发重建</button></div>';
+    var runs = (results[1] && results[1].workflow_runs) || [];
+    var html = '<div class="page-bar"><h2>🚀 构建部署</h2><button class="btn" onclick="triggerPagesBuild()" id="buildBtn">▶ 触发构建</button></div>';
 
-    // Current status
+    // 当前状态（Pages 信息：域名 / HTTPS）
     if (info && !info.message) {
       html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px;">';
       var statusColor = info.status === 'built' ? '#00d4aa' : (info.status === 'building' ? '#f39c12' : '#e74c3c');
-      html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;"><div style="font-size:14px;color:' + statusColor + ';font-weight:bold">' + (info.status || 'unknown') + '</div><div class="dim">当前状态</div></div>';
+      html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;"><div style="font-size:14px;color:' + statusColor + ';font-weight:bold">' + (info.status || 'unknown') + '</div><div class="dim">Pages 状态</div></div>';
       html += '<div style="background:#111;border:1px solid #2a2a3a;padding:20px;"><div style="font-size:14px;color:#00d4aa">' + (info.cname || '-') + '</div><div class="dim">自定义域名</div></div>';
       var httpsStatus = info.https_certificate ? '✅ 已启用' : '❌ 未配置';
       var httpsEnforced = info.https_enforced ? '✅ 已强制' : '❌ 未强制';
@@ -1421,16 +1321,17 @@ function loadPagesBuild() {
       html += '<div class="warn"><b>⚠</b> 无法获取 Pages 信息（token 可能需要 pages 权限）</div>';
     }
 
-    // Build history
-    if (Array.isArray(builds) && builds.length > 0) {
-      html += '<b>构建历史</b><table><tr><th>状态</th><th>触发</th><th>时间</th><th>提交</th></tr>';
-      builds.forEach(function(b) {
-        var status = b.status || '?';
-        var statusCls = status === 'built' ? 'green' : (status === 'building' ? 'dim' : 'red');
-        var actor = b.actor ? b.actor.login : '?';
-        var date = b.updated_at ? b.updated_at.substring(0, 19).replace('T', ' ') : '?';
-        var commit = b.commit ? b.commit.substring(0, 7) : '?';
-        html += '<tr><td class="' + statusCls + '">' + status + '</td><td>' + escHtml(actor) + '</td><td style="white-space:nowrap">' + date + '</td><td><code>' + commit + '</code></td></tr>';
+    // Actions runs 历史
+    if (runs.length > 0) {
+      html += '<b>Actions 构建历史</b><table><tr><th>状态</th><th>工作流</th><th>触发</th><th>时间</th><th>提交</th></tr>';
+      runs.forEach(function(r) {
+        var done = r.status === 'completed';
+        var status = done ? (r.conclusion || 'completed') : 'running';
+        var statusCls = r.conclusion === 'success' ? 'green' : (done ? 'red' : 'dim');
+        var actor = r.actor ? r.actor.login : '?';
+        var date = r.created_at ? r.created_at.substring(0, 19).replace('T', ' ') : '?';
+        var commit = r.head_sha ? r.head_sha.substring(0, 7) : '?';
+        html += '<tr><td class="' + statusCls + '">' + status + '</td><td>' + escHtml(r.name || 'deploy') + '</td><td>' + escHtml(actor) + '</td><td style="white-space:nowrap">' + date + '</td><td><code>' + commit + '</code></td></tr>';
       });
       html += '</table>';
     } else {
@@ -1446,20 +1347,20 @@ function loadPagesBuild() {
 
 window.triggerPagesBuild = function() {
   var btn = document.getElementById('buildBtn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ 构建中...'; }
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 触发中...'; }
   var result = document.getElementById('buildResult');
-  if (result) result.textContent = '⏫ 触发 Pages 构建...';
-  gh('/repos/' + REPO + '/pages/builds', { method: 'POST' }).then(function(d) {
-    if (d && !d.message) {
-      if (result) result.innerHTML = '<span class="green">✅ 构建已触发！</span> 约 30 秒后完成。';
-      setTimeout(loadPagesBuild, 2000);
+  if (result) result.textContent = '⏫ 触发 Actions 构建...';
+  gh('/repos/' + REPO + '/actions/workflows/deploy.yml/dispatches', { method: 'POST', body: JSON.stringify({ ref: BRANCH }) }).then(function(d) {
+    if (d && d.message) {
+      if (result) result.innerHTML = '<span class="red">❌ 触发失败: ' + d.message + '</span>';
+      if (btn) { btn.disabled = false; btn.textContent = '▶ 触发构建'; }
     } else {
-      if (result) result.innerHTML = '<span class="red">❌ 触发失败: ' + (d.message||'') + '</span>';
-      if (btn) { btn.disabled = false; btn.textContent = '▶ 触发重建'; }
+      if (result) result.innerHTML = '<span class="green">✅ 构建已触发！</span> 约 1-2 分钟完成。';
+      setTimeout(loadPagesBuild, 3000);
     }
   }).catch(function(e) {
     if (result) result.innerHTML = '<span class="red">❌ 请求失败: ' + e.message + '</span>';
-    if (btn) { btn.disabled = false; btn.textContent = '▶ 触发重建'; }
+    if (btn) { btn.disabled = false; btn.textContent = '▶ 触发构建'; }
   });
 };
 
@@ -1472,10 +1373,8 @@ window.enforceHTTPS = function() {
     branch: 'master'
   })}).then(function(d) {
     if (d && !d.message) {
-      if (result) result.innerHTML = '<span class="green">✅ HTTPS 强制已启用！</span> 触发 Pages 重建...';
-      gh('/repos/' + REPO + '/pages/builds', { method: 'POST' }).then(function() {
-        setTimeout(loadPagesBuild, 2000);
-      }).catch(function() { loadPagesBuild(); });
+      if (result) result.innerHTML = '<span class="green">✅ HTTPS 强制已启用！</span>';
+      setTimeout(loadPagesBuild, 2000);
     } else {
       if (result) result.innerHTML = '<span class="red">❌ 启用失败: ' + (d ? d.message : 'unknown') + '</span>';
     }
@@ -1506,13 +1405,13 @@ function loadSitemap() {
   main.innerHTML = '<p>加载中...</p>';
   gh('/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1').then(function(data) {
     if (data.message) { main.innerHTML = '<p class="red">' + data.message + '</p>'; return; }
-    var pages = data.tree.filter(function(f) { return f.path.endsWith('.md') && f.path !== 'README.md' && f.path !== 'test.md'; });
+    var pages = data.tree.filter(function(f) { return f.path.startsWith('docs/') && f.path.endsWith('.md') && f.path !== 'docs/README.md' && f.path !== 'docs/test.md'; });
     var html = '<div class="page-bar"><h2>🗺 站点地图</h2><button class="btn" onclick="generateSitemap()" id="sitemapBtn">📄 生成 sitemap.xml</button></div>';
-    html += '<p class="dim">扫描到 ' + pages.length + ' 个页面，点击按钮生成 sitemap.xml 并提交到仓库。</p>';
+    html += '<p class="dim">扫描到 ' + pages.length + ' 个页面，生成 sitemap.xml 写入 .vuepress/public/，构建后随站点发布。</p>';
     html += '<table><tr><th>页面</th><th>URL</th></tr>';
     var siteUrl = 'https://hn.liuxiyu.cn';
     pages.forEach(function(f) {
-      var urlPath = '/' + f.path.replace('.md', '');
+      var urlPath = repoPathToUrl(f.path);
       html += '<tr><td>' + escHtml(f.path) + '</td><td><a href="' + siteUrl + urlPath + '" target="_blank" class="dim">' + siteUrl + urlPath + '</a></td></tr>';
     });
     html += '</table>';
@@ -1530,7 +1429,7 @@ window.generateSitemap = function() {
   if (result) result.textContent = '⏫ 扫描页面并生成...';
   gh('/repos/' + REPO + '/git/trees/' + BRANCH + '?recursive=1').then(function(data) {
     if (data.message) { if (result) result.innerHTML = '<span class="red">' + data.message + '</span>'; if (btn) btn.disabled = false; return; }
-    var pages = data.tree.filter(function(f) { return f.path.endsWith('.md') && f.path !== 'README.md' && f.path !== 'test.md'; });
+    var pages = data.tree.filter(function(f) { return f.path.startsWith('docs/') && f.path.endsWith('.md') && f.path !== 'docs/README.md' && f.path !== 'docs/test.md'; });
     var siteUrl = 'https://hn.liuxiyu.cn';
     var now = new Date().toISOString().split('T')[0];
     var xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
@@ -1538,24 +1437,23 @@ window.generateSitemap = function() {
     // Home page
     xml += '  <url><loc>' + siteUrl + '/</loc><priority>1.0</priority><lastmod>' + now + '</lastmod></url>\n';
     pages.forEach(function(f) {
-      var urlPath = '/' + f.path.replace('.md', '');
-      var priority = f.path.startsWith('hacknet/') ? '0.7' : '0.8';
+      var urlPath = repoPathToUrl(f.path);
+      if (urlPath === '/') return;   // 首页已在上面
+      var priority = f.path.startsWith('docs/hacknet/') ? '0.7' : '0.8';
       xml += '  <url><loc>' + siteUrl + urlPath + '</loc><priority>' + priority + '</priority><lastmod>' + now + '</lastmod></url>\n';
     });
     xml += '</urlset>\n';
 
     if (result) result.textContent = '⏫ 提交 sitemap.xml...';
-    gh('/repos/' + REPO + '/contents/sitemap.xml', { method: 'PUT', body: JSON.stringify({
+    gh('/repos/' + REPO + '/contents/.vuepress/public/sitemap.xml', { method: 'PUT', body: JSON.stringify({
       message: 'update sitemap.xml',
       content: b64enc(xml),
-      sha: shaMap['sitemap.xml'] || undefined,
+      sha: shaMap['.vuepress/public/sitemap.xml'] || undefined,
       branch: BRANCH
     })}).then(function(d) {
       if (d && d.content) {
-        shaMap['sitemap.xml'] = d.content.sha;
-        if (result) result.innerHTML = '<span class="green">✅ sitemap.xml 已提交！</span> <a href="/sitemap.xml" target="_blank">查看</a>';
-        // Trigger Pages rebuild
-        gh('/repos/' + REPO + '/pages/builds', { method: 'POST' }).catch(function() {});
+        shaMap['.vuepress/public/sitemap.xml'] = d.content.sha;
+        if (result) result.innerHTML = '<span class="green">✅ sitemap.xml 已提交！</span> 构建后随站点发布。';
       } else {
         if (result) result.innerHTML = '<span class="red">❌ 提交失败: ' + (d ? d.message : 'unknown') + '</span>';
       }

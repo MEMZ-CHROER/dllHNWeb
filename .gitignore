@@ -8,3 +8,13 @@ vendor/
 *.swo
 .DS_Store
 Thumbs.db
+
+# VuePress / Node
+node_modules/
+docs/.vuepress/.cache/
+docs/.vuepress/.temp/
+docs/.vuepress/dist/
+yarn-error.log
+
+# Cloudflare 本地状态
+.wrangler/

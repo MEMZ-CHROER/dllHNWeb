@@ -1,0 +1,150 @@
+/* ── CSEL 深色黑客主题 ──
+   覆盖 VuePress 默认主题，还原原站 _layouts/default.html + assets/css/style.css 的视觉。
+   6 个主色变量来自 theme.json（config.ts 注入 :root） */
+
+body {
+  font-family: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+  background: var(--bg);
+  color: var(--fg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Navbar ── */
+.navbar {
+  border-bottom: 1px solid var(--border);
+  background: rgba(10, 10, 15, 0.95);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.navbar .site-name {
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 18px;
+}
+.navbar .nav-link {
+  color: var(--fg);
+}
+.navbar .nav-link:hover,
+.navbar .nav-link.active {
+  color: var(--accent);
+}
+.navbar .nav-link.active {
+  font-weight: bold;
+}
+.navbar .toggle-color-mode-button {
+  color: var(--fg);
+}
+
+/* ── 隐藏侧边栏（本站为扁平结构） ── */
+.sidebar {
+  display: none;
+}
+
+/* ── 正文排版 ── */
+.theme-default-content {
+  max-width: 800px;
+}
+.theme-default-content h1 {
+  color: #fff;
+  font-size: 32px;
+  margin: 32px 0 16px;
+}
+.theme-default-content h2 {
+  color: var(--accent);
+  font-size: 22px;
+  margin: 28px 0 12px;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.theme-default-content h3 {
+  font-size: 18px;
+  margin: 20px 0 10px;
+  color: var(--fg);
+}
+.theme-default-content p {
+  margin: 12px 0;
+}
+.theme-default-content a {
+  color: var(--accent2);
+}
+.theme-default-content code {
+  background: #1a1a28;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 14px;
+  color: var(--fg);
+}
+.theme-default-content pre {
+  background: #1a1a28;
+  padding: 16px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  margin: 16px 0;
+}
+.theme-default-content pre code {
+  background: none;
+  padding: 0;
+}
+.theme-default-content ul,
+.theme-default-content ol {
+  margin: 12px 0 12px 24px;
+  padding-left: 0;
+}
+.theme-default-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 16px;
+  margin: 16px 0;
+  opacity: 0.8;
+  color: inherit;
+  background: none;
+}
+.theme-default-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 32px 0;
+}
+.theme-default-content img {
+  max-width: 100%;
+  border: 1px solid var(--border);
+}
+
+/* ── 超宽表格横向滚动（servers/walkthrough 等大表） ── */
+.theme-default-content table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+.theme-default-content th,
+.theme-default-content td {
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+}
+.theme-default-content th {
+  color: var(--accent);
+  background: transparent;
+}
+.theme-default-content tr:nth-child(2n) {
+  background-color: rgba(0, 255, 65, 0.03);
+}
+
+/* ── Footer ── */
+.csel-footer {
+  border-top: 1px solid var(--border);
+  padding: 24px 20px;
+  text-align: center;
+  font-size: 13px;
+  opacity: 0.6;
+  margin-top: 40px;
+  color: var(--fg);
+}
+.csel-footer p {
+  margin: 4px 0;
+}
+.csel-footer a {
+  color: var(--accent2);
+}

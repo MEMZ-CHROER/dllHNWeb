@@ -76,34 +76,6 @@ export default {
       return new Response(null, { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE", "Access-Control-Allow-Headers": "Content-Type,Authorization" } });
     }
 
-    // ── OAuth ──
-    if (path === "/auth") {
-      if (url.searchParams.has("code")) {
-        const code = url.searchParams.get("code");
-        const r = await fetch("https://github.com/login/oauth/access_token", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "application/json" },
-          body: JSON.stringify({ client_id: env.GITHUB_CLIENT_ID, client_secret: env.GITHUB_CLIENT_SECRET, code }),
-        });
-        const data = await r.json();
-        return new Response(
-          `<!DOCTYPE html><html><body><script>
-(function() {
-  var token = ${JSON.stringify(data.access_token)};
-  if (token && window.opener) {
-    window.opener.postMessage({ type: 'authorization', data: { token: token } }, '*');
-    window.opener.postMessage('authorization:' + JSON.stringify({ token: token }), '*');
-  }
-  window.close();
-})();
-<\/script></body></html>`,
-          { headers: { "Content-Type": "text/html; charset=utf-8" } }
-        );
-      }
-      const loc = `https://github.com/login/oauth/authorize?client_id=${env.GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent("https://hn.liuxiyu.cn/auth")}&scope=repo+user&allow_signup=false`;
-      return Response.redirect(loc, 302);
-    }
-
     // ═══════════════════════════════════════════════
     //  MULTI-USER AUTH API
     // ═══════════════════════════════════════════════
@@ -234,13 +206,14 @@ export default {
       try { bodyData = await clone.json(); } catch(e) { bodyData = {}; }
       const token = bodyData._token || "";
 
-      // Permission matrix based on target file path
+      // Permission matrix based on target file path (VuePress 迁移后路径)
       const isPasswords = targetPath.includes("/contents/_passwords.json");
-      const isConfig = targetPath.includes("/contents/_config.yml");
-      const isStyle = targetPath.includes("/contents/assets/css/style.css");
-      const isMedia = targetPath.includes("/contents/assets/img/");
-      const isNavbar = targetPath.includes("/contents/_layouts/default.html");
-      const isPage = /\/contents\/.*\.(md|html)$/.test(targetPath);
+      const isConfig = targetPath.includes("/contents/.vuepress/config.json");
+      const isStyle = targetPath.includes("/contents/.vuepress/theme.json")
+        || targetPath.includes("/contents/.vuepress/styles/index.scss");
+      const isMedia = targetPath.includes("/contents/.vuepress/public/assets/img/");
+      const isNavbar = targetPath.includes("/contents/.vuepress/navbar.json");
+      const isPage = /\/contents\/docs\/.*\.md$/.test(targetPath);
       const isPagesBuild = targetPath.includes("/pages/builds");
 
       if (isPasswords) {
@@ -279,14 +252,19 @@ export default {
       });
       if (!treeRes.ok) return new Response('Failed to fetch repo tree', { status: 500 });
       const treeData = await treeRes.json();
-      const pages = (treeData.tree || []).filter(f => f.path.endsWith('.md') && f.path !== 'README.md' && f.path !== 'test.md');
+      // VuePress 迁移后：内容在 docs/ 下，URL 映射回无后缀路径（docs/hacknet/foo.md → /hacknet/foo）
+      const pages = (treeData.tree || []).filter(f =>
+        f.path.startsWith('docs/') && f.path.endsWith('.md')
+        && f.path !== 'docs/README.md' && f.path !== 'docs/test.md');
       const siteUrl = 'https://hn.liuxiyu.cn';
       const now = new Date().toISOString().split('T')[0];
       let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
       xml += `  <url><loc>${siteUrl}/</loc><priority>1.0</priority><lastmod>${now}</lastmod></url>\n`;
       pages.forEach(f => {
-        const urlPath = '/' + f.path.replace('.md', '');
-        const priority = f.path.startsWith('hacknet/') ? '0.7' : '0.8';
+        let urlPath = '/' + f.path.replace(/^docs\//, '').replace(/\.md$/, '');
+        if (urlPath === '/index') urlPath = '/';
+        urlPath = urlPath.replace(/\/index$/, '');   // /hacknet/index → /hacknet
+        const priority = f.path.startsWith('docs/hacknet/') ? '0.7' : '0.8';
         xml += `  <url><loc>${siteUrl}${urlPath}</loc><priority>${priority}</priority><lastmod>${now}</lastmod></url>\n`;
       });
       xml += '</urlset>\n';
@@ -300,7 +278,8 @@ export default {
     // ═══════════════════════════════════════════════
     //  PAGE PASSWORD PROTECTION
     // ═══════════════════════════════════════════════
-    var pagePath = path.replace(/\/$/, '');
+    // 归一化：剥离尾斜杠与 .html，使无后缀与 .html 直连指向同一密码键
+    var pagePath = path.replace(/\/$/, '').replace(/\.html$/, '');
     var cookie = request.headers.get('Cookie') || '';
     var passKey = 'pw_' + pagePath.replace(/\//g, '_');
     var passed = cookie.includes(passKey + '=1');
@@ -351,13 +330,42 @@ export default {
       }
     }
 
-    var originUrl = SITE_ORIGIN + path;
+    // ── URL 重写：VuePress 产物是 .html 文件，保持无后缀 URL 访问 ──
+    // 候选顺序：原样（Pages 对目录自动 301 到 index.html）→ 补 .html → 目录 index.html
+    function resolveOriginPaths(p) {
+      if (p === '/' || p === '') return ['/index.html'];
+      if (p.endsWith('/')) return [p + 'index.html'];
+      var lastSeg = p.split('/').pop() || '';
+      if (/\.[a-zA-Z0-9]{1,8}$/.test(lastSeg)) return [p]; // 已有扩展名：原样透传
+      return [p, p + '.html', p + '/index.html'];
+    }
+
     var cache = caches.default;
-    // 缓存 key 包含 query，方便用 ?t=xxx 绕过缓存验证；页面更新后 60 秒内自动生效
-    var cacheKey = new Request(originUrl + url.search, request);
-    var cached = await cache.match(cacheKey);
-    if (cached) return cached;
-    var originRes = await fetch(originUrl, { headers: { "User-Agent": "CSEL-Worker" } });
+    var originUrl = SITE_ORIGIN + path;
+    var originRes = null;
+    var cacheKey = null;
+    var candidates = resolveOriginPaths(path);
+    for (var i = 0; i < candidates.length; i++) {
+      var oUrl = SITE_ORIGIN + candidates[i];
+      // 缓存 key 包含 query，方便用 ?t=xxx 绕过缓存验证；页面更新后 60 秒内自动生效
+      var ck = new Request(oUrl + url.search, request);
+      var cached = await cache.match(ck);
+      if (cached) return cached;
+      var r = await fetch(oUrl, { headers: { "User-Agent": "CSEL-Worker" } });
+      if (r.ok) {
+        originUrl = oUrl;
+        originRes = r;
+        cacheKey = ck;
+        break;
+      }
+    }
+    if (!originRes) {
+      // 全部候选 404：返回第一个候选的响应（GitHub Pages 默认 404 页 / VuePress 404.html）
+      var firstUrl = SITE_ORIGIN + candidates[0];
+      originRes = await fetch(firstUrl, { headers: { "User-Agent": "CSEL-Worker" } });
+      originUrl = firstUrl;
+      cacheKey = new Request(firstUrl + url.search, request);
+    }
     var res = new Response(originRes.body, originRes);
     if (originRes.ok) {
       res.headers.set("Cache-Control", "public, max-age=60");

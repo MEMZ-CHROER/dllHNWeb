@@ -1,6 +1,5 @@
 ---
 title: 首页
-layout: default
 ---
 
 # CSEL
@@ -8,7 +7,7 @@ layout: default
 
 ## 项目一览
 
-### [CSEL Mod](csel-mod)
+### [CSEL Mod](/csel-mod)
 CSEL Extension — 同时兼容原版 Hacknet 和开源版的 BepInEx 插件。  
 提供 crackall、find、clog、pscan 等实用命令。
 
