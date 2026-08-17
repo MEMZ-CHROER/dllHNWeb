@@ -335,6 +335,10 @@ export default {
     function resolveOriginPaths(p) {
       if (p === '/' || p === '') return ['/index.html'];
       if (p.endsWith('/')) return [p + 'index.html'];
+      // .html 结尾：先原样，404 时回退到目录 index.html（防旧链接/缓存跳 .html 后 404）
+      if (/\.html$/i.test(p)) {
+        return [p, p.replace(/\.html$/i, '') + '/index.html'];
+      }
       var lastSeg = p.split('/').pop() || '';
       if (/\.[a-zA-Z0-9]{1,8}$/.test(lastSeg)) return [p]; // 已有扩展名：原样透传
       return [p, p + '.html', p + '/index.html'];
