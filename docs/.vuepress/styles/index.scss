@@ -3,12 +3,23 @@
    6 个主色变量来自 theme.json（config.ts 注入 :root） */
 
 body {
-  font-family: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+  /* 中文正文用系统中文字体：避免西文等宽字体对中文 fallback 造成拉长/怪异 */
+  font-family: 'Microsoft YaHei UI', 'Microsoft YaHei', 'PingFang SC',
+    'Noto Sans SC', 'Source Han Sans SC', -apple-system, 'Segoe UI', sans-serif;
   background: var(--bg);
   color: var(--fg);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* 代码/终端/logo 保留等宽黑客风（Consolas 为 Windows 系统自带，加载快） */
+code,
+pre,
+kbd,
+.navbar .site-name,
+.home .vp-hero h1 {
+  font-family: 'Consolas', 'Courier New', 'JetBrains Mono', monospace;
 }
 
 /* ── Navbar ── */
