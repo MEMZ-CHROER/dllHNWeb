@@ -208,3 +208,7 @@ Console.WriteLine($"{path} 有 {lines} 行");
 - [🧩 泛型、委托与事件](/programming/csharp/generic) — 让类型和方法都能"参数化"
 - [📁 文件与 JSON 处理](/programming/csharp/io-json) — 读写文件与数据交换
 - [🐛 调试与单元测试](/programming/csharp/debug) — 从"出 bug"到"防 bug"
+- [🔤 字符串与文本处理](/programming/csharp/strings) — 拼接/插值/正则/编码
+- [🛠 .NET 工具链与常用库](/programming/csharp/toolchain) — dotnet CLI/NuGet/发布
+- [🚀 性能优化与最佳实践](/programming/csharp/performance) — 值类型/GC/热点优化
+- [🎮 用 C# 开发游戏 Mod](/programming/csharp/game-mod) — BepInEx + Harmony 通用入门
