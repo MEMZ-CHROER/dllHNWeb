@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 MEMZ-CHROER
+Copyright (c) 2026 MEMZ-CHROER (Lxy)
 
 本许可适用于本仓库的配置与构建文件（package.json、wrangler.toml、docs/.vuepress/ 下的配置、构建脚本等），不适用于：
 - 内容文档（见 LICENSE，CC BY-NC-SA 4.0）
