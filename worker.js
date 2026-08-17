@@ -400,6 +400,59 @@ export default {
       originUrl = firstUrl;
       cacheKey = new Request(firstUrl + url.search, request);
     }
+
+    // ── 客户端内容填充：SSR 骨架保留 + vp-content 内容区替换（热改核心）──
+    // 只对 HTML 页面做；admin/密码页已由前置逻辑拦截，不会走到这里
+    var contentType = originRes.headers.get("Content-Type") || "";
+    if (contentType.indexOf("text/html") > -1) {
+      var rawHtml = await originRes.text();
+      var vpStart = rawHtml.indexOf('<div vp-content');
+      if (vpStart > -1) {
+        // 定位 vp-content 内容区闭合（数嵌套 div）
+        var depth = 0, j = vpStart;
+        while (j < rawHtml.length) {
+          if (rawHtml.startsWith('<div', j)) depth++;
+          if (rawHtml.startsWith('</div>', j)) { depth--; if (depth === 0) break; }
+          j++;
+        }
+        if (depth === 0) {
+          var contentStart = rawHtml.indexOf('>', vpStart) + 1;
+          var openTag = rawHtml.slice(vpStart, contentStart);
+          // 加 data-md 指向内容源（页面路径 → GitHub md 路径）
+          // 根路径 / → docs/README.md；其他 /hacknet/story/ → docs/hacknet/story/README.md
+          var mdKey = path === '/' ? 'README.md' : path.replace(/^\/|\/$/g, '') + '/README.md';
+          var openTagWithMd = openTag.indexOf('data-md') > -1
+            ? openTag
+            : openTag.replace('>', ' data-md="' + mdKey + '">');
+          var rest = rawHtml.slice(j + 6); // 跳过 </div>
+          // 注入客户端 JS：拉 /md/ 渲染填充
+          var clientScript = '<script type="module">' +
+            'const el=document.querySelector(\'[data-md]\');' +
+            'if(el){const mdKey=el.getAttribute(\'data-md\');' +
+            'fetch(\'/md/\'+mdKey).then(r=>r.text()).then(md=>{' +
+            'el.innerHTML=md.split(\'\\n\').map(l=>{' +
+            'if(l.startsWith(\'# \'))return \'<h1>\'+esc(l.slice(2))+\'</h1>\';' +
+            'if(l.startsWith(\'## \'))return \'<h2>\'+esc(l.slice(3))+\'</h2>\';' +
+            'if(l.startsWith(\'- \'))return \'<li>\'+esc(l.slice(2))+\'</li>\';' +
+            'if(l.trim()===\'\')return \'\';' +
+            'return \'<p>\'+esc(l)+\'</p>\';' +
+            '}).join(\'\\n\')})}' +
+            'function esc(s){return s.replace(/&/g,\'&amp;\').replace(/</g,\'&lt;\').replace(/>/g,\'&gt;\')}' +
+            '</script>';
+          rawHtml = rawHtml.slice(0, vpStart) + openTagWithMd + '<!-- 内容由客户端填充 --></div>'
+            + rest.replace('</body>', clientScript + '</body>');
+        }
+      }
+      // 重建响应（含替换后的 HTML）
+      originRes = new Response(rawHtml, {
+        status: originRes.status,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "public, max-age=60",
+        }
+      });
+    }
+
     var res = new Response(originRes.body, originRes);
     if (originRes.ok) {
       res.headers.set("Cache-Control", "public, max-age=60");
