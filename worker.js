@@ -1,7 +1,7 @@
 // Cloudflare Worker — API proxy + OAuth + Page Password Protection + Multi-User Auth
 
 const GH_API = 'https://api.github.com';
-const SITE_ORIGIN = 'https://MEMZ-CHROER.github.io/dllHNWeb';
+const SITE_ORIGIN = 'https://MEMZ-CHROER.github.io/hn-web';
 const RATE_LIMIT_WINDOW = 60000; // 1 minute
 const MAX_LOGIN_ATTEMPTS = 5;
 const MAX_USERNAME_LEN = 32;
@@ -246,7 +246,7 @@ export default {
       const cacheKey = new Request('https://sitemap-cache/site-sitemap', request);
       let cached = await cache.match(cacheKey);
       if (cached) return cached;
-      const treeUrl = GH_API + '/repos/MEMZ-CHROER/dllHNWeb/git/trees/master?recursive=1';
+      const treeUrl = GH_API + '/repos/MEMZ-CHROER/hn-web/git/trees/master?recursive=1';
       const treeRes = await fetch(treeUrl, {
         headers: { Authorization: "Bearer " + env.GITHUB_TOKEN, "User-Agent": "CSEL-Worker" },
       });
@@ -288,7 +288,7 @@ export default {
       var body = await request.text();
       var formData = new URLSearchParams(body);
       var submittedPw = formData.get('password') || '';
-      var cfgUrl = GH_API + '/repos/MEMZ-CHROER/dllHNWeb/contents/_passwords.json';
+      var cfgUrl = GH_API + '/repos/MEMZ-CHROER/hn-web/contents/_passwords.json';
       var cfgRes = await fetch(cfgUrl, {
         headers: { Authorization: "Bearer " + env.GITHUB_TOKEN, Accept: "application/vnd.github.v3.raw", "User-Agent": "CSEL-Worker" },
       });
@@ -305,7 +305,7 @@ export default {
     }
 
     if (!passed && pagePath !== '/admin' && !pagePath.startsWith('/admin') && !pagePath.startsWith('/assets')) {
-      var cfgUrl2 = GH_API + '/repos/MEMZ-CHROER/dllHNWeb/contents/_passwords.json';
+      var cfgUrl2 = GH_API + '/repos/MEMZ-CHROER/hn-web/contents/_passwords.json';
       var cfgRes2 = await fetch(cfgUrl2, {
         headers: { Authorization: "Bearer " + env.GITHUB_TOKEN, Accept: "application/vnd.github.v3.raw", "User-Agent": "CSEL-Worker" },
       });
