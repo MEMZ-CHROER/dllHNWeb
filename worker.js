@@ -77,6 +77,28 @@ export default {
       return new Response(null, { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE", "Access-Control-Allow-Headers": "Content-Type,Authorization" } });
     }
 
+    // ── MD 内容接口：客户端填充用，从 raw.githubusercontent 拉 md（免 API 限流）──
+    // /md/docs/hacknet/commands/README.md → raw 拉取
+    if (path.startsWith('/md/')) {
+      var mdPath = path.replace(/^\/md\//, '');
+      var mdUrl = 'https://raw.githubusercontent.com/MEMZ-CHROER/hn-web/master/docs/' + mdPath;
+      var mdRes = await fetch(mdUrl, {
+        headers: { "User-Agent": "CSEL-Worker" },
+        // cf: { cacheEverything: true, cacheTtl: 60 } // 生产启用，本地 Miniflare 不支持
+      });
+      if (!mdRes.ok) {
+        return new Response('md not found', { status: 404, headers: { "Content-Type": "text/plain" } });
+      }
+      return new Response(mdRes.body, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "public, max-age=60",
+          "Access-Control-Allow-Origin": "*",
+        }
+      });
+    }
+
     // ═══════════════════════════════════════════════
     //  MULTI-USER AUTH API
     // ═══════════════════════════════════════════════
