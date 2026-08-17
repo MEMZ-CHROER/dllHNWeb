@@ -18,6 +18,8 @@ export default defineUserConfig({
   // base 必须为 '/'：自定义域名根路径；github.io 项目页前缀由 Cloudflare Worker 反代补齐
   base: '/',
   lang: 'zh-CN',
+  // 无后缀 URL：避免 VuePress 把无后缀路径规范成 .html（inferRoutePath），配合目录式产物
+  cleanUrls: true,
   title: site.title,
   description: site.description,
   bundler: viteBundler(),
