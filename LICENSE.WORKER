@@ -1,0 +1,11 @@
+All Rights Reserved
+
+Copyright (c) 2026 MEMZ-CHROER
+
+本许适用于 worker.js 文件。
+
+worker.js 是本网站核心的反向代理与权限控制逻辑，包含认证、密码保护、权限矩阵等专有实现。保留所有权利（All Rights Reserved）。
+
+未经授权，不得复制、修改、分发或使用本文件。
+
+For any inquiry, please contact via GitHub: https://github.com/MEMZ-CHROER

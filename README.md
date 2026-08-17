@@ -1,6 +1,16 @@
-# DllHN / CSEL 项目网站
+# hn-web / CSEL 项目网站
 
 基于 **VuePress 2 + Vite** 的静态站点，部署到 GitHub Pages + Cloudflare Worker。
+
+## License
+
+本仓库采用**混合许可**：
+
+| 部分 | 许可 |
+|---|---|
+| 内容文档（docs/ 下的 Markdown）| [CC BY-NC-SA 4.0](LICENSE) |
+| 配置与构建文件 | [MIT](LICENSE.MIT) |
+| worker.js | [All Rights Reserved](LICENSE.WORKER) |
 
 ## 本地开发
 

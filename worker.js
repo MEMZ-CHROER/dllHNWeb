@@ -1,4 +1,5 @@
 // Cloudflare Worker — API proxy + OAuth + Page Password Protection + Multi-User Auth
+// Copyright (c) 2026 MEMZ-CHROER — All Rights Reserved. See LICENSE.WORKER.
 
 const GH_API = 'https://api.github.com';
 const SITE_ORIGIN = 'https://MEMZ-CHROER.github.io/hn-web';
