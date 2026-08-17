@@ -197,3 +197,14 @@ Console.WriteLine($"{path} 有 {lines} 行");
 - **继续学**：方法重载、接口、LINQ、async/await
 - **写点真东西**：用 C# 写控制台小工具、Unity 游戏（C# 是 Unity 的官方语言）、ASP.NET Core 网站
 - **多目标构建**：一个项目同时编译到 .NET Framework 4.7.2 和 .NET 8 是常见需求，用 csproj 里的 `<TargetFrameworks>` 就能做到
+
+### ➡️ C# 进阶系列
+
+入门学完，往下深入：
+
+- [🧱 面向对象深入](/programming/csharp/oop) — 继承/多态/接口 vs 抽象类/组合/record
+- [🔗 LINQ 与集合操作](/programming/csharp/linq) — 声明式操作集合，查询语法与性能
+- [⚡ 异步与并发编程](/programming/csharp/async) — async/await 与并行处理
+- [🧩 泛型、委托与事件](/programming/csharp/generic) — 让类型和方法都能"参数化"
+- [📁 文件与 JSON 处理](/programming/csharp/io-json) — 读写文件与数据交换
+- [🐛 调试与单元测试](/programming/csharp/debug) — 从"出 bug"到"防 bug"
