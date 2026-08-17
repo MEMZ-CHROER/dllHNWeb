@@ -334,7 +334,7 @@ export default {
     // 让访问 URL 始终以 / 结尾，避免 VuePress 客户端（inferRoutePath）把无后缀 URL 推断成 .html 而 404
     var lastSeg = path.split('/').pop() || '';
     if (path !== '/' && !path.endsWith('/') && !/\.[a-zA-Z0-9]{1,8}$/.test(lastSeg)) {
-      return Response.redirect(path + '/', 301);
+      return Response.redirect(new URL(path + '/', request.url).toString(), 301);
     }
 
     // ── URL 重写：VuePress 产物是 .html 文件，保持无后缀 URL 访问 ──
