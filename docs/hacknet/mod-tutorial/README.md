@@ -4,9 +4,9 @@ title: 快速模组教程
 
 # Hacknet 快速模组制作教程
 
-Hacknet 的模组是 **BepInEx 插件**。本站的 [CSEL Mod](/csel-mod) 就是一个现成范本——最快的做法是**复制它改成你自己的**。
+Hacknet 的模组是 **BepInEx 插件**。本站的 [CSEL Mod](/csel-mod/) 就是一个现成范本——最快的做法是**复制它改成你自己的**。
 
-> 想先搞懂原理再看这篇速成：完整的机制讲解见 [模组开发指南](/hacknet/mods)。
+> 想先搞懂原理再看这篇速成：完整的机制讲解见 [模组开发指南](/hacknet/mods/)。
 
 ---
 
@@ -151,4 +151,4 @@ dotnet build -p:OpenHacknet=false   # 编译给 Steam 原版
 
 ---
 
-**参考实现**：完整源码在 [CSEL Mod](/csel-mod) 与游戏开源仓库的 `CSEL/` 目录。
+**参考实现**：完整源码在 [CSEL Mod](/csel-mod/) 与游戏开源仓库的 `CSEL/` 目录。

@@ -70,7 +70,7 @@ var buf = ArrayPool<byte>.Shared.Rent(1024);
 
 ## 4. 字符串优化的正确姿势
 
-（详见[字符串与文本处理](/programming/csharp/strings)）
+（详见[字符串与文本处理](/programming/csharp/strings/)）
 
 - 拼接用 `StringBuilder`
 - 用 `string.Concat`/插值替代 `+`（编译器已优化常量拼接）

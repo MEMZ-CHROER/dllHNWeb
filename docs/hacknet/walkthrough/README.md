@@ -201,7 +201,7 @@ CSEC 任务板刷到后期，**V** 开始向你发布 **bit 系列**任务（"bi
 | Bitwise Repo Base | `23.236.62.147` | 5 | `tenzen` |
 | Bitwise Drop Server | `108.160.165.139` | 5 | 防火墙 |
 
-**Bitwise** 系列服务器（`Bitwise Repo Base`、`Bitwise Drop Server`、`Bitwise Relay 01`）藏有揭示 Bit 身份的关键资料——你会在那里读到 Bit 留下的自动化遗言（详见 [人物与剧情档案](/hacknet/characters)）。
+**Bitwise** 系列服务器（`Bitwise Repo Base`、`Bitwise Drop Server`、`Bitwise Relay 01`）藏有揭示 Bit 身份的关键资料——你会在那里读到 Bit 留下的自动化遗言（详见 [人物与剧情档案](/hacknet/characters/)）。
 
 **最终目标**：`Porthack.Heart`（sec=0）——PortHack 系统的核心。摧毁它，"终结 PortHack"，触发结局。
 

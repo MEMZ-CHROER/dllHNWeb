@@ -31,4 +31,4 @@ Hacknet 的成就通过 Steam 解锁。下表为基础游戏的全部 12 个成�
 - **`rude_response` 与 `secret_path_complete`**：对应主线抉择的两条分支——在 Naix 的 "gg wp" 邮件回脏话，或反黑回去删 `x-server.sys`。后者走通 lelzSec 线即为隐藏路径。
 - **`trace_close`**：把 `tracert` 留着，追踪警报响起的瞬间断开连接——离成功只差半秒。
 
-> 详见 [全流程攻略](/hacknet/walkthrough) 的抉择章节与 [服务器速查表](/hacknet/servers)。
+> 详见 [全流程攻略](/hacknet/walkthrough/) 的抉择章节与 [服务器速查表](/hacknet/servers/)。

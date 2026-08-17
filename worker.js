@@ -330,6 +330,13 @@ export default {
       }
     }
 
+    // ── URL 规范化：无后缀目录页 301 到带斜杠 ──
+    // 让访问 URL 始终以 / 结尾，避免 VuePress 客户端（inferRoutePath）把无后缀 URL 推断成 .html 而 404
+    var lastSeg = path.split('/').pop() || '';
+    if (path !== '/' && !path.endsWith('/') && !/\.[a-zA-Z0-9]{1,8}$/.test(lastSeg)) {
+      return Response.redirect(path + '/', 301);
+    }
+
     // ── URL 重写：VuePress 产物是 .html 文件，保持无后缀 URL 访问 ──
     // 候选顺序：原样（Pages 对目录自动 301 到 index.html）→ 补 .html → 目录 index.html
     function resolveOriginPaths(p) {

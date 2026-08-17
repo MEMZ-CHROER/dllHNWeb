@@ -26,7 +26,7 @@ Hacknet 里藏着不少有意思的彩蛋，有些藏在服务器里，有些藏
 - **HOME - Resonance**（DLC 曲目）：vaporwave 神曲《Resonance》被直接收录为游戏音乐，是送给网络文化爱好者的彩蛋
 - **Roller Mobster**（基础游戏曲目）：M.O.O.N. 的《Roller Mobster》（《霓虹恶魔》配乐）
 - **Roja Drifts By**：电子音乐人 Rico Puestel 的曲目
-- 游戏音乐里藏着大量独立电子音乐人的授权作品，详见 [音乐清单](/hacknet/music)
+- 游戏音乐里藏着大量独立电子音乐人的授权作品，详见 [音乐清单](/hacknet/music/)
 
 ## 🎮 PointClicker —— 游戏里的小游戏
 

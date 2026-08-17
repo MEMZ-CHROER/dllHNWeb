@@ -6,7 +6,7 @@ title: Mod 推荐安装指南
 
 Hacknet 本体内容有限，扩展玩法靠 **BepInEx 插件**。本文是一份"装了就能玩"的推荐清单与安装步骤——清单参考了一台已安装以下全部 mod 的 Steam 正版实例（`BepInEx/plugins/`），均为社区常见 mod，可放心组合使用。
 
-> 想自己写 mod？先看 [模组开发指南](/hacknet/mods) 与 [快速模组教程](/hacknet/mod-tutorial)。
+> 想自己写 mod？先看 [模组开发指南](/hacknet/mods/) 与 [快速模组教程](/hacknet/mod-tutorial/)。
 
 ---
 
@@ -40,7 +40,7 @@ Pathfinder 是 Hacknet 社区**最主流的 mod 框架**，提供类型安全的
 
 | Mod | 版本 | 功能 | 依赖 |
 |---|---|---|---|
-| **CSEL Mod** | v1.3.0 | 本站 [CSEL Mod](/csel-mod)，命令增强（GUID `dev.csel.extension`） | 无 |
+| **CSEL Mod** | v1.3.0 | 本站 [CSEL Mod](/csel-mod/)，命令增强（GUID `dev.csel.extension`） | 无 |
 | **KernelExtensions** | v0.5.1 | 基于 Pathfinder 的实用功能扩展（官方描述："adds some useful things for Hacknet via Pathfinder API"） | PathfinderAPI |
 | **ZeroDayToolKit** | v1.0.4 | 零日工具集（GUID `kr.o_r.prodzpod.zerodaytoolkit`），带音效，可用 `Configs/` 里的 cfg 调音量；内含二进制编解码、beep 等命令 | 无 |
 | **KernelFix** | — | 命名看是内核修复补丁，内置打包工具（costura），修复类补丁 | 无 |
