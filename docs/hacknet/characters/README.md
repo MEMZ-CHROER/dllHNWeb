@@ -2,11 +2,11 @@
 title: 人物与剧情档案
 ---
 
+
 # 人物与剧情档案
 
 本页整理了 Hacknet 主线剧情中的主要人物与组织，信息基于游戏源码中的任务、邮件与对话数据。
 
----
 
 ## 人物总览
 
@@ -20,8 +20,8 @@ title: 人物与剧情档案
 | **/el** | 消息板运营者 | lelzSec 板块的幕后运营者 |
 | **Polar Star / 北极星** | 组织 | 一组"试炼"性质的服务器 |
 | **X-C Proj. : Bradford** | 项目联络人 | Entropy 线的项目联系人 |
-| **Tom Wilkins** | — | 剧情邮件高频发件人之一 |
-| **Matt Trobbiani** | — | 剧情邮件高频发件人之一 |
+| **Tom Wilkins** | — | Hacknet-os.com域名所有者 |
+| **Matt Trobbiani** | — | 游戏创作者 |
 
 ### DLC（Labyrinths）角色
 
@@ -36,7 +36,6 @@ title: 人物与剧情档案
 | **Crypsis** | 委托组织 | 委托解密工具的第三方 |
 | **Psylance** | 安全公司 | 调查 PacificAir 航班相关的安防公司 |
 
----
 
 ## 主要人物
 
@@ -102,7 +101,6 @@ Bit 是最神秘也最重要的角色。他从头到尾引导你完成一系列�
 - **相关服务器**: `Shrine of the Polar Star` → `Trial of Patience/Haste/Diligence/Focus` → `Head of the Polar Star`
 - **角色**: 一套以"试炼"命名的组织，考验玩家的耐心、速度、勤奋与专注。出现在"反黑 Naix"分支之后。
 
----
 
 ## DLC（Labyrinths）人物
 
@@ -143,7 +141,6 @@ Bit 是最神秘也最重要的角色。他从头到尾引导你完成一系列�
 - **相关服务器**: `Psylance Cyber Security_Employee IRC` `50.31.225.93`（sec=5）、`Psylance Internal Services/Archives`（sec=4）
 - **角色**: 一家安全公司，正在调查 PacificAir 航班相关系统，是 DLC 空航线段的主要对手（Subvert Psylance Investigation）。
 
----
 
 ## 剧情时间线
 
@@ -170,7 +167,6 @@ V 系列（bit:初章 ~ bit:阻止）→ EnTech 公司 → Bit 的真相
 
 > 💡 在 Entropy 与 CSEC 阶段之间，可选择参加 **Labyrinths DLC** 的试炼及其任务（涉及坠机调查、Striker 角色线）。
 
----
 
 ## 背景设定速记
 

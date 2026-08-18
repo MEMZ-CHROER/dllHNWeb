@@ -2,13 +2,13 @@
 title: 服务器速查表
 ---
 
+
 # 服务器速查表
 
 Hacknet 主线相关服务器的真实数据速查。数据提取自游戏 Content 服务器定义文件。
 
 > 说明：表中"密码"指管理员密码（`adminPass`）；"安全等级"为 0-6+；"防火墙/代理"标注该服务器是否带这类防御。未标注 IP 的服务器在对应任务中动态分配地址。
 
----
 
 ## 🌐 核心服务器
 
@@ -24,7 +24,6 @@ Hacknet 主线相关服务器的真实数据速查。数据提取自游戏 Conte
 | Network Education Archives | 动态 | 6 | — | — | — |
 | Macrosoft Storage Server | `168.61.82.246` | 5 | — | — | — |
 
----
 
 ## 🎯 CSEC 系
 
@@ -38,7 +37,6 @@ Hacknet 主线相关服务器的真实数据速查。数据提取自游戏 Conte
 | CSEC Gauntlet 02 | 动态 | 2 | — | — | ✅ |
 | CSEC Gauntlet 03 | 动态 | 3 | — | ✅ | ✅ |
 
----
 
 ## 🏭 Entropy 系
 
@@ -54,7 +52,6 @@ Hacknet 主线相关服务器的真实数据速查。数据提取自游戏 Conte
 | Entropy Asset Server | 动态 | 4 | — | — | — |
 | Entropy Contract Database | 动态 | 5 | — | — | — |
 
----
 
 ## 🛰 EnTech / Bitwise（终局）
 
@@ -75,7 +72,6 @@ Hacknet 主线相关服务器的真实数据速查。数据提取自游戏 Conte
 | Bitwise Repo Base | `23.236.62.147` | 5 | `tenzen` | ✅ | ✅ |
 | Bitwise Drop Server | `108.160.165.139` | 5 | — | ✅ | — |
 
----
 
 ## 🧩 任务板（Hub）服务器
 
@@ -95,7 +91,6 @@ Hacknet 主线相关服务器的真实数据速查。数据提取自游戏 Conte
 | Eidolon Soft Production Server | `111.105.22.1` | 4 | — | ✅ | — |
 | Porthack.Heart | 动态 | 0 | — | — | — |
 
----
 
 ## 🔒 lelzSec / 北极星
 
@@ -116,7 +111,6 @@ Hacknet 主线相关服务器的真实数据速查。数据提取自游戏 Conte
 | Trial of Haste | `103.31.7.41` | 3 | — | — | ✅ |
 | Trial of Focus | `103.31.7.211` | 5 | — | ✅ | ✅ |
 
----
 
 ## 🎨 其他
 
@@ -131,7 +125,6 @@ Hacknet 主线相关服务器的真实数据速查。数据提取自游戏 Conte
 | Practice | 动态 | 4 | — | — | — |
 | Bitwise Relay 01 | 动态 | 2 | — | — | — |
 
----
 
 ## 🎮 DLC（Labyrinths）服务器
 
@@ -243,7 +236,6 @@ Hacknet 主线相关服务器的真实数据速查。数据提取自游戏 Conte
 | Manananggal_workbook | `244.188.232.231` | 1 | — |
 | Asdis Dagrunsdottir's Laptop | `198.150.137.83` | 1 | — |
 
----
 
 ## 💡 小贴士
 

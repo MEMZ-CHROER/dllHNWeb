@@ -2,6 +2,7 @@
 title: 全流程攻略
 ---
 
+
 # Hacknet 主线全流程攻略
 
 本攻略按 Hacknet 主线实际推进顺序整理，涉及的关键服务器、IP、密码均来自游戏真实数据。
@@ -30,7 +31,6 @@ V 系列（bit:初章 ~ bit:阻止）
 
 > 💡 在 Entropy 和 CSEC 阶段之间，可以选择参加 **Labyrinths DLC** 的试炼及其任务（独立剧情线）。
 
----
 
 ## 第一章 · Bit 初次见面系列邮件
 
@@ -49,7 +49,6 @@ V 系列（bit:初章 ~ bit:阻止）
 
 **任务 4**：Bit 让你去找 **Entropy 的测试服务器**——`Entropy test Server` `199.59.149.230`（sec=1，带代理）。这正是引出 Entropy 线的一步。
 
----
 
 ## 第二章 · Entropy
 
@@ -72,7 +71,6 @@ V 系列（bit:初章 ~ bit:阻止）
 
 > ⚠️ 到这一步，你已经开始给 Entropy 卖命。但接下来发生的事，会彻底改变游戏的走向——**你被人反入侵了**。
 
----
 
 ## 第三章 · 玩家被 Naix 入侵 ★剧情转折
 
@@ -86,7 +84,6 @@ V 系列（bit:初章 ~ bit:阻止）
 
 **当前处境**：你的机器可能已被 Naix 动过手脚，系统文件被动过。此时面临**抉择**。
 
----
 
 ## 第四章 · 抉择：两条分支
 
@@ -129,7 +126,6 @@ V 系列（bit:初章 ~ bit:阻止）
 
 无论选 A 还是 B，两条分支在完成后**殊途同归**——都会把你导向 **CSEC**。
 
----
 
 ## 第五章 · CSEC：邀请、自动测试、肯德基
 
@@ -151,7 +147,6 @@ CSEC 是一个专业的雇佣黑客组织。通过一系列考验后，CSEC 正�
 
 通过后获得访问 **CSEC** 主服务器（管理员密码 `admin`）和 **CSEC Assets Server**（密码 `csec-5xg3D11`）的权限，任务板向你完全开放。
 
----
 
 ## 第六章 · CSEC 任务板系列任务
 
@@ -182,7 +177,6 @@ CSEC 是一个专业的雇佣黑客组织。通过一系列考验后，CSEC 正�
 - www.reddit.com（sec=4）／ Network Education Archives（sec=6）
 - Jason's LackBook Pro `37.187.27.55`（sec=2，密码 `DANGER`）
 
----
 
 ## 第七章 · V 系列（bit:初章 ~ bit:阻止）
 
@@ -205,7 +199,6 @@ CSEC 任务板刷到后期，**V** 开始向你发布 **bit 系列**任务（"bi
 
 **最终目标**：`Porthack.Heart`（sec=0）——PortHack 系统的核心。摧毁它，"终结 PortHack"，触发结局。
 
----
 
 ## 结局
 
@@ -217,7 +210,6 @@ CSEC 任务板刷到后期，**V** 开始向你发布 **bit 系列**任务（"bi
 >
 > 整个剧情都建立在 Bit 失联 14 天后自动触发的"故障保险"之上。
 
----
 
 ## 可选 · Labyrinths DLC
 
@@ -286,7 +278,6 @@ DLC 开头，你要通过 **Kaguya 的试炼**（`#ALERT# - The Kaguya Trials`�
 - **Pellium Box**（`69.172.201.153`，Naix 彩蛋）：一台藏着 **Naix 主题文件**的服务器（`x-server_Green.sys`、`x-server_RiptideStandard.sys`、`x-server_StarfieldClassic.sys`、`sys/x-server.sys`）——和主线里 Naix 的 x-server.sys 系统联动，IP 与主线 SecuLock（`69.172.201.208`）同网段
 - **PointClicker 2**、**It Follows**、**Cleanup**、**Expo**、**Keebs**、**Bean Stalk** 等支线任务
 
----
 
 ## 关键密码速查
 

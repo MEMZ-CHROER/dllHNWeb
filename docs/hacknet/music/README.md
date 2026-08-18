@@ -2,11 +2,11 @@
 title: 音乐与音效
 ---
 
+
 # 音乐与音效
 
 Hacknet 的配乐以氛围化电子乐为主，多来自独立电子音乐人的授权。以下清单整理自游戏 `Content/Music` 与 `Content/DLC/Music` 目录。
 
----
 
 ## 基础游戏曲目（Content/Music）
 
@@ -33,7 +33,6 @@ Hacknet 的配乐以氛围化电子乐为主，多来自独立电子音乐人的
 | `dark_drone_008.ogg` | 暗调氛围音 |
 | `spiral_gauge_up.ogg` / `spiral_gauge_down.ogg` | 压力表上升/下降氛围音 |
 
----
 
 ## DLC《Labyrinths》曲目（DLC/Music）
 
@@ -48,7 +47,6 @@ Hacknet 的配乐以氛围化电子乐为主，多来自独立电子音乐人的
 | `snidelyWhiplash.ogg` | 场景曲 |
 | `Remi2.ogg` / `RemiDrone.ogg` / `Remi_Finale.ogg` | Remi 主题曲（终局相关） |
 
----
 
 ## 小知识
 

@@ -2,11 +2,12 @@
 title: 成就列表
 ---
 
+
 # 成就列表
 
 Hacknet 的成就通过 Steam 解锁。下表为基础游戏的全部 12 个成就，触发条件提取自游戏源码（`AchievementsManager.Unlock(...)` 调用位置）。
 
-> 基础游戏共 12 个成就。DLC《Labyrinths》另有其专属成就（在 Steam 客户端内查看）。
+> 基础游戏共 11 个成就。
 
 | 成就 ID | 触发条件 | 说明 |
 |---|---|---|
@@ -23,7 +24,6 @@ Hacknet 的成就通过 Steam 解锁。下表为基础游戏的全部 12 个成�
 | `trace_close` | 惊险逃脱追踪 | 被系统追踪时在 0.5 秒内完成逃脱（`timer < 0.5`） |
 | `progress_complete` | 主线通关 | 摧毁 Porthack.Heart、看完结局 |
 
----
 
 ## 彩蛋成就的小提示
 

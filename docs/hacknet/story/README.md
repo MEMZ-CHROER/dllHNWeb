@@ -2,11 +2,11 @@
 title: 主线剧情
 ---
 
+
 # Hacknet 主线剧情
 
 基于 Hacknet 游戏源码中的任务文件与脚本内容还原，按实际主线推进顺序整理。
 
----
 
 ## 序幕：Bit 的遗言
 
@@ -14,7 +14,6 @@ title: 主线剧情
 
 游戏开场是一段来自 **Bit** 的录音——一名已经遇害的黑客。他通过预先录制的邮件系统，在死后一步步引导玩家完成他的遗愿。
 
----
 
 ## 第一阶段：教程与初次接触
 
@@ -35,7 +34,6 @@ Bit 的后续邮件 **"Something in return"** 告诫玩家一个最重要的习�
 
 > 🔑 **这条忠告会在后面救你（或坑你）**：Bit 一开始就警告你别留日志，可 Naix 之所以能反入侵你的电脑，正是因为你入侵时留下的日志。
 
----
 
 ## 第二阶段：加入 Entropy
 
@@ -43,7 +41,6 @@ Bit 的测试服务器把你引向 **Entropy**——一群崇尚混乱的黑客�
 
 在 Entropy 阶段，你开始接触更高级的目标（Entropy Asset Server、Entropy Contract Database），组织信任度逐步提升。
 
----
 
 ## 第三阶段：Naix 入侵与抉择 ★主线转折
 
@@ -68,7 +65,6 @@ Bit 的测试服务器把你引向 **Entropy**——一群崇尚混乱的黑客�
 
 认输之余，Naix 给了你一个"测试"——去把安全公司 **Nortron** 的网站改成满屏 "DICKS"。由此你进入 **lelzSec** 线：**/el 论坛**、**北极星试炼**（Polar Snake：Shrine → Patience/Haste/Diligence/Focus → Head）。
 
----
 
 ## 第四阶段：CSEC（邀请、自动测试、肯德基）
 
@@ -79,13 +75,11 @@ Bit 的测试服务器把你引向 **Entropy**——一群崇尚混乱的黑客�
 
 通过后获得 **CSEC** 主服务器（密码 `admin`）与 **CSEC Assets Server**（密码 `csec-5xg3D11`）权限，任务板完全开放。
 
----
 
 ## 第五阶段：CSEC 任务板系列任务
 
 自由接单阶段，承接 `#CLIENT#` 匿名客户的任务：Decypher 解密系列、Pacemaker 起搏器系列、核心数据库（ISP Management、Death Row、Universal Medical、International Academic DB 等）。这也是刷声望、攒装备的时期。
 
----
 
 ## 第六阶段：V 系列 · Bit 之路（主线核心）
 
@@ -98,7 +92,6 @@ CSEC 任务板推进到后期，**V**——Bit 的朋友——开始向你发布
 
 Bit 生前在 **EnTech** 工作，创造了 PortHack，发现了 EnTech 的危险项目并因此丧命。整套主线都在回应他的遗言。
 
----
 
 ## 最终章：终结 PortHack
 
@@ -110,14 +103,12 @@ Bit 请求玩家摧毁 **`Porthack.Heart`** 服务器——PortHack 系统的核
 
 连接至 `porthackHeart` 服务器，在其上运行 PortHack。PorthackHeart 守护进程检测到这一操作后，会"碎裂心脏"。随后播放 Bit 的最终演说录音，屏幕滚动显示 Bit 的遗言，演职员表伴随 "Bit(Ending)" 音乐滚动。
 
----
 
 ## 结局
 
 - **主线结局（正统）**：V 系列 → bit:阻止 → 摧毁 PorthackHeart → Bit 的最终演讲 → 演职员表（Credits Server `226.187.99.3`）
 - **Labyrinths DLC 结局**：独立剧情线，涉及飞机失事调查、Striker 角色线
 
----
 
 ## 关键人物
 
