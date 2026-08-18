@@ -4,9 +4,7 @@ title: Hacknet 百科
 
 # Hacknet 百科
 
-Hacknet 是一款终端模拟黑客游戏。本页面整理了基于 Hacknet 游戏数据的机制、命令、剧情等全方位信息。
-
----
+Hacknet 是一款终端模拟黑客游戏。本板块整理了基于 Hacknet 游戏数据的机制、命令、剧情等全方位信息。
 
 ## 目录
 
@@ -34,14 +32,18 @@ Bit、CSEC、Entropy 等人物与组织档案，附剧情时间线。
 ### [📦 Mod 推荐安装指南](/hacknet/mod-install/)
 BepInEx 安装、Pathfinder 框架、实用 Mod 清单与排障速查。
 
+
 ### [📜 主线剧情](/hacknet/story/)
 从 Bit 的第一封邮件到最终结局的完整故事线。
 
+### [🏛 组织历史](/hacknet/organizations/)
+Entropy、CSEC、lelzSec、EnTech、Bibliotheque 各组织的历史与关系。
+
 ### [🏆 成就列表](/hacknet/achievements/)
-基础游戏全部 12 个成就与触发条件。
+全部成就的获取条件与解锁方式。
 
 ### [🥚 游戏彩蛋](/hacknet/easter-eggs/)
-The Gibson、Naix 主题仓库、音乐致敬、开发者出镜等彩蛋合集。
+游戏中的隐藏彩蛋与趣味细节。
 
 ### [🎵 音乐与音效](/hacknet/music/)
-基础游戏与 DLC 的曲目清单（含 HOME - Resonance、Roller Mobster 等授权曲）。
+Hacknet 的原声音乐与音效收藏。
