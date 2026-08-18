@@ -50,3 +50,12 @@ Entropy、CSEC、lelzSec、EnTech、Bibliotheque 各组织的历史与关系。
 
 ### [🎵 音乐与音效](/hacknet/music/)
 Hacknet 的原声音乐与音效收藏。
+
+### [🧰 程序与工具大全](/hacknet/programs/)
+全部可执行程序的图鉴：RAM 消耗、功能与获取途径。
+
+### [🎨 OS 主题系统](/hacknet/themes/)
+内置与 DLC 的全部主题、切换方式与主题文件机制。
+
+### [🖥 服务器服务（Daemon）](/hacknet/daemons/)
+服务器上的各类后台服务程序详解。
