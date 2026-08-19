@@ -81,5 +81,14 @@ Hacknet 的原声音乐与音效收藏。
 ### [🎲 随机生成系统](/hacknet/generation/)
 公司名、NPC、学位、车辆等程序化生成的机制。
 
+### [💾 存档系统](/hacknet/saves/)
+账户清单与存档文件结构、本地/Steam 云双写、存档编辑与备份。
+
+### [👥 账户与用户系统](/hacknet/accounts/)
+玩家账户、服务器 UserDetail、Account/OnlineAccount/Neopals 账号分层解析。
+
+### [🛡 防御与追踪深度解析](/hacknet/defense/)
+防火墙 analyze 原理、追踪计时与报警、管理员类型、Shell 过载/陷阱机制。
+
 ### [👾 敌对黑客入侵事件](/hacknet/hostile-hacker/)
 DLC 恶意文件注入：跳出到真实系统、被锁死与修复流程。
